@@ -401,6 +401,7 @@ export const ModelName = {
   Product: 'Product',
   Table: 'Table',
   Order: 'Order',
+  StripeEvent: 'StripeEvent',
   OrderProduct: 'OrderProduct'
 } as const
 
@@ -417,7 +418,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "category" | "product" | "table" | "order" | "orderProduct"
+    modelProps: "category" | "product" | "table" | "order" | "stripeEvent" | "orderProduct"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -717,6 +718,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    StripeEvent: {
+      payload: Prisma.$StripeEventPayload<ExtArgs>
+      fields: Prisma.StripeEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.StripeEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripeEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.StripeEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripeEventPayload>
+        }
+        findFirst: {
+          args: Prisma.StripeEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripeEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.StripeEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripeEventPayload>
+        }
+        findMany: {
+          args: Prisma.StripeEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripeEventPayload>[]
+        }
+        create: {
+          args: Prisma.StripeEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripeEventPayload>
+        }
+        createMany: {
+          args: Prisma.StripeEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.StripeEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripeEventPayload>[]
+        }
+        delete: {
+          args: Prisma.StripeEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripeEventPayload>
+        }
+        update: {
+          args: Prisma.StripeEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripeEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.StripeEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.StripeEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.StripeEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripeEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.StripeEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StripeEventPayload>
+        }
+        aggregate: {
+          args: Prisma.StripeEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateStripeEvent>
+        }
+        groupBy: {
+          args: Prisma.StripeEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.StripeEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.StripeEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.StripeEventCountAggregateOutputType> | number
+        }
+      }
+    }
     OrderProduct: {
       payload: Prisma.$OrderProductPayload<ExtArgs>
       fields: Prisma.OrderProductFieldRefs
@@ -864,10 +939,25 @@ export const OrderScalarFieldEnum = {
   date: 'date',
   status: 'status',
   orderReadyAt: 'orderReadyAt',
-  tableId: 'tableId'
+  tableId: 'tableId',
+  paymentStatus: 'paymentStatus',
+  stripeCheckoutSessionId: 'stripeCheckoutSessionId',
+  stripePaymentIntentId: 'stripePaymentIntentId',
+  createdAt: 'createdAt',
+  paidAt: 'paidAt'
 } as const
 
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
+
+
+export const StripeEventScalarFieldEnum = {
+  id: 'id',
+  stripeEventId: 'stripeEventId',
+  eventType: 'eventType',
+  processedAt: 'processedAt'
+} as const
+
+export type StripeEventScalarFieldEnum = (typeof StripeEventScalarFieldEnum)[keyof typeof StripeEventScalarFieldEnum]
 
 
 export const OrderProductScalarFieldEnum = {
@@ -970,6 +1060,20 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
  * Reference to a field of type 'Boolean'
  */
 export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
+ * Reference to a field of type 'PaymentStatus'
+ */
+export type EnumPaymentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PaymentStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'PaymentStatus[]'
+ */
+export type ListEnumPaymentStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PaymentStatus[]'>
     
 
 /**
@@ -1127,6 +1231,7 @@ export type GlobalOmitConfig = {
   product?: Prisma.ProductOmit
   table?: Prisma.TableOmit
   order?: Prisma.OrderOmit
+  stripeEvent?: Prisma.StripeEventOmit
   orderProduct?: Prisma.OrderProductOmit
 }
 

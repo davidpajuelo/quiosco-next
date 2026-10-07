@@ -42,6 +42,28 @@ model Order {
   tableId      String?
   table        Table?     @relation(fields: [tableId], references: [id])
   orderProducts OrderProduct[]
+  paymentStatus           PaymentStatus @default(pending) @map("payment_status")
+  stripeCheckoutSessionId String?       @unique @map("stripe_checkout_session_id")
+  stripePaymentIntentId   String?       @unique @map("stripe_payment_intent_id")
+  createdAt               DateTime      @default(now()) @map("created_at")
+  paidAt                  DateTime?     @map("paid_at")
+}
+
+enum PaymentStatus {
+  pending
+  paid
+  cancelled
+  refunded
+  payment_failed
+}
+
+model StripeEvent {
+  id            Int      @id @default(autoincrement())
+  stripeEventId String   @unique @map("stripe_event_id")
+  eventType     String   @map("event_type")
+  processedAt   DateTime @default(now()) @map("processed_at")
+
+  @@map("stripe_events")
 }
 
 model OrderProduct {

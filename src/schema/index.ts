@@ -9,7 +9,7 @@ export const OrderSchema = z.object({
         id: z.number(),
         name: z.string(),
         price: z.number(),
-        quantity: z.number(),
+        quantity: z.number().int().min(1, 'Hay errores en el Pedido'),
         subtotal: z.number()
     }))
 })

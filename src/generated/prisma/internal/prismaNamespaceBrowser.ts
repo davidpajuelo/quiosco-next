@@ -55,6 +55,7 @@ export const ModelName = {
   Product: 'Product',
   Table: 'Table',
   Order: 'Order',
+  StripeEvent: 'StripeEvent',
   OrderProduct: 'OrderProduct'
 } as const
 
@@ -108,10 +109,25 @@ export const OrderScalarFieldEnum = {
   date: 'date',
   status: 'status',
   orderReadyAt: 'orderReadyAt',
-  tableId: 'tableId'
+  tableId: 'tableId',
+  paymentStatus: 'paymentStatus',
+  stripeCheckoutSessionId: 'stripeCheckoutSessionId',
+  stripePaymentIntentId: 'stripePaymentIntentId',
+  createdAt: 'createdAt',
+  paidAt: 'paidAt'
 } as const
 
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
+
+
+export const StripeEventScalarFieldEnum = {
+  id: 'id',
+  stripeEventId: 'stripeEventId',
+  eventType: 'eventType',
+  processedAt: 'processedAt'
+} as const
+
+export type StripeEventScalarFieldEnum = (typeof StripeEventScalarFieldEnum)[keyof typeof StripeEventScalarFieldEnum]
 
 
 export const OrderProductScalarFieldEnum = {

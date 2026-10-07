@@ -62,6 +62,11 @@ export type Table = Prisma.TableModel
  */
 export type Order = Prisma.OrderModel
 /**
+ * Model StripeEvent
+ * 
+ */
+export type StripeEvent = Prisma.StripeEventModel
+/**
  * Model OrderProduct
  * 
  */

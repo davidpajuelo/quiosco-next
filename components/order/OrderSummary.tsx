@@ -9,7 +9,6 @@ import { OrderSchema } from '@/src/schema'
 
 export default function OrderSummary() {
   const order = useStore((state) => state.order)
-  const clearOrder= useStore((state) => state.clearOrder)
   const total = useMemo(() => order.reduce((total, item) => total + (item.quantity * item.price), 0), [order])
   const handleCreateOrder = async (formData: FormData) => {
     const data = {
@@ -18,7 +17,7 @@ export default function OrderSummary() {
       order
     }
     const result = OrderSchema.safeParse(data)
-    console.log(result)
+    
     if (! result.success) {
       result.error.issues.forEach((issue) => {
         toast.error(issue.message)
@@ -28,13 +27,14 @@ export default function OrderSummary() {
     }
    
     const response = await createOrder(data)
-    if (response?.errors) {
+    if ('errors' in response) {
         response.errors.forEach((issue) => {
           toast.error(issue.message)
         })
+        return
     }
-    toast.success('Pedido realizado correctamente')
-    clearOrder();
+    // Redirige al Checkout alojado de Stripe
+    window.location.assign(response.url)
   }
   return (
     <aside className='md:h-screen md:overflow-y-scroll md:w-64 lg:w-96 p-5'>
