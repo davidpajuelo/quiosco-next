@@ -11,7 +11,16 @@ npm install --save-dev prisma dotenv
 
 npx prisma generate
 
+ npx prisma migrate dev      
+
 npm i zustand //herramiente de cliente
+#carga de iconos
+npm i @heroicons/react
+
+
+npm i zod
+
+npm i react-toastify
 
 
 
@@ -27,3 +36,5 @@ Prisma Seed:
 Prisma Studio:
 
 	npx prisma studio
+
+

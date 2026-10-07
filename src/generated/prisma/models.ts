@@ -10,4 +10,7 @@
  */
 export type * from './models/Category'
 export type * from './models/Product'
+export type * from './models/Table'
+export type * from './models/Order'
+export type * from './models/OrderProduct'
 export type * from './commonInputTypes'
