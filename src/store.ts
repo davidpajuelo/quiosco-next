@@ -15,6 +15,8 @@ export const useStore = create<Store>((set, get) => (
     {
         order: [],
         addToOrder: (product) => {
+            // categoryId e image se descartan a propósito: no forman parte de OrderItem
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { categoryId, image, ...data } = product
             let order: OrderItem[] = []
             if (get().order.find(item => item.id === product.id)) {
