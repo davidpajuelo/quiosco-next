@@ -1,6 +1,7 @@
 "use server"
 
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
+import { TABLE_COOKIE, readTableCookie } from "@/src/lib/table-session"
 import { prisma } from "@/src/lib/prisma"
 import { createCheckoutSession, getStripe } from "@/src/lib/stripe"
 import { OrderSchema } from "@/src/schema"
@@ -12,6 +13,14 @@ export async function createOrder(data: unknown): Promise<CreateOrderResponse> {
     if (!result.success){
         return {
             errors: result.error.issues
+        }
+    }
+
+    // La mesa sale de la cookie firmada, nunca del cliente
+    const tableId = await readTableCookie(cookies().get(TABLE_COOKIE)?.value)
+    if (!tableId) {
+        return {
+            errors: [{ message: 'Mesa no identificada, escanea el QR de tu mesa' }]
         }
     }
 
@@ -64,6 +73,7 @@ export async function createOrder(data: unknown): Promise<CreateOrderResponse> {
             data: {
                 name: result.data.name,
                 total,
+                tableId,
                 stripeCheckoutSessionId: session.id,
                 orderProducts: {
                     create: result.data.order.map( product => ({

@@ -1,9 +1,11 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import { useStore } from '@/src/store'
 
 export default function CartButton() {
     const order = useStore((state) => state.order)
+    const { category } = useParams<{ category?: string }>()
     const [summaryVisible, setSummaryVisible] = useState(false)
     const count = order.reduce((total, item) => total + item.quantity, 0)
 
@@ -17,9 +19,9 @@ export default function CartButton() {
         )
         observer.observe(summary)
         return () => observer.disconnect()
-    }, [])
+    }, [category])
 
-    if (count === 0 || summaryVisible) return null
+    if (!category || count === 0 || summaryVisible) return null
 
     return (
         <button

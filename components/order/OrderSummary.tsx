@@ -1,5 +1,6 @@
 "use client"
 import { useStore } from '@/src/store'
+import { useParams } from 'next/navigation'
 import { toast} from 'react-toastify'
 import React, { useMemo } from 'react'
 import ProductDetails from './ProductDetails'
@@ -9,6 +10,8 @@ import { OrderSchema } from '@/src/schema'
 
 export default function OrderSummary() {
   const order = useStore((state) => state.order)
+  // Solo hay categoría en la URL cuando el usuario ha pulsado una
+  const { category } = useParams<{ category?: string }>()
   const total = useMemo(() => order.reduce((total, item) => total + (item.quantity * item.price), 0), [order])
   const handleCreateOrder = async (formData: FormData) => {
     const data = {
@@ -36,15 +39,19 @@ export default function OrderSummary() {
     // Redirige al Checkout alojado de Stripe
     window.location.assign(response.url)
   }
+  if (!category) return null
+
   return (
     <aside id='pedido' className='md:h-screen md:overflow-y-scroll md:w-64 lg:w-96 p-5 scroll-mt-2'>
-      <button
-        type='button'
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className='md:hidden mb-5 w-full py-2 rounded border-2 border-black font-bold uppercase'
-      >
-        ↑ Volver arriba
-      </button>
+      {category && (
+        <button
+          type='button'
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className='md:hidden mb-5 w-full py-2 rounded border-2 border-black font-bold uppercase'
+        >
+          ↑ Volver arriba
+        </button>
+      )}
       <h1 className='text-4xl text-center font-black'>Mi Pedido</h1>
       {order.length === 0 ? <p className="text-center my-10">El pedido esta vacío</p> : (
         <div className='mt-5'>
