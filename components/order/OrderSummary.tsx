@@ -37,7 +37,14 @@ export default function OrderSummary() {
     window.location.assign(response.url)
   }
   return (
-    <aside className='md:h-screen md:overflow-y-scroll md:w-64 lg:w-96 p-5'>
+    <aside id='pedido' className='md:h-screen md:overflow-y-scroll md:w-64 lg:w-96 p-5 scroll-mt-2'>
+      <button
+        type='button'
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className='md:hidden mb-5 w-full py-2 rounded border-2 border-black font-bold uppercase'
+      >
+        ↑ Volver arriba
+      </button>
       <h1 className='text-4xl text-center font-black'>Mi Pedido</h1>
       {order.length === 0 ? <p className="text-center my-10">El pedido esta vacío</p> : (
         <div className='mt-5'>
@@ -61,7 +68,8 @@ export default function OrderSummary() {
               type="text"
               placeholder='Tu Nombre'
               className='bg-white border border-gray-100 p-2 w-full'
-              name='name' />
+              name='name'
+              required />
 
             <input type="submit" className="py-2 rounded font-bold uppercase text-white bg-black w-full text-center cursor-pointer"
               value="Confirmar Pedido">
