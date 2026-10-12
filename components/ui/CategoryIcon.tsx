@@ -18,7 +18,7 @@ export default function CategoryIcon({ category }: CategoryIconProps) {
         last-of-type:border-b`}>
             <div className='relative size-16 '>
                 <Image
-                    src={`/icon_${category.slug}.svg`}
+                    src={`/icon_${category.slug}.jfif`}
                     alt={`Imagen de la Categoría: ${category.name}`}
                     fill
                 />
