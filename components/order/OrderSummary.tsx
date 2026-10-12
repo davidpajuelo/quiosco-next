@@ -42,7 +42,7 @@ export default function OrderSummary() {
   if (!category) return null
 
   return (
-    <aside id='pedido' className='md:h-screen md:overflow-y-scroll md:w-64 lg:w-96 p-5 scroll-mt-2'>
+    <aside id='pedido' className='md:h-screen md:overflow-y-scroll md:w-64 lg:w-96 p-5 scroll-mt-2 '>
       {category && (
         <button
           type='button'
@@ -52,7 +52,7 @@ export default function OrderSummary() {
           ↑ Volver arriba
         </button>
       )}
-      <h1 className='text-4xl text-center font-black'>Mi Pedido</h1>
+      <h1 className='text-4xl text-center'>Mi Pedido</h1>
       {order.length === 0 ? <p className="text-center my-10">El pedido esta vacío</p> : (
         <div className='mt-5'>
           {order.map(item => (

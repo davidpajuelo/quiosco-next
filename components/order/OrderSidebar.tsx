@@ -13,9 +13,9 @@ export default async function OrderSidebar() {
   const categories = await getCategories();
   const tableId = await readTableCookie(cookies().get(TABLE_COOKIE)?.value)
   return (
-    <aside className="md:w-72 md:h-screen bg-white">
+    <aside className="md:w-72 md:h-screen">
       {tableId && (
-        <p className="text-5xl bg-amber-800 text-white text-center font-bold uppercase py-2">
+        <p className={`text-5xl bg-[#8FA382] text-black text-center font-bold uppercase py-2`}>
           Mesa {tableId}
         </p>
       )}

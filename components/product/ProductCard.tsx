@@ -8,7 +8,7 @@ type ProductCardProps = {
 }
 export default function ProductCard({product}: ProductCardProps) {
   return (
-    <div className="border bg-white">
+    <div className="border">
         <Image 
         width={400}
         height={500}
@@ -16,8 +16,8 @@ export default function ProductCard({product}: ProductCardProps) {
         alt={`Imagen platillo ${product.name}`}
         />
         <div className="p-5 ">
-            <h3 className="text-2xl font-black">{product.name}</h3>
-            <p className="mt-5 font-black text-4xl text-amber-500">
+            <h3 className="text-2xl">{product.name}</h3>
+            <p className="mt-5 text-4xl text-[#C65D3B]">
                 { formatCurrency(product.price )}
             </p>
            <AddProductButton 
