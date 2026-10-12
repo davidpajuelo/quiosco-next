@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import {Inter} from "next/font/google";
+import {Tajawal} from "next/font/google";
 import "./globals.css";
 
-const font = Inter({
+const font = Tajawal({
     subsets:['latin'],
-    weight:['400','700','900']
+    weight:['400','500','700','900']
   })
 
 export const metadata: Metadata = {
