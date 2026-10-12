@@ -19,7 +19,7 @@ export default function CategoryDrawer({ children }: { children: React.ReactNode
                 onClick={() => setOpen(prev => !prev)}
                 aria-expanded={open}
                 aria-controls="categorias"
-                className="md:hidden w-full flex items-center justify-between bg-amber-400 px-5 py-3 font-bold text-lg"
+                className="md:hidden w-full flex items-center justify-between bg-[#C65D3B] px-5 py-3 font-bold text-lg"
             >
                 Categorías
                 <svg
