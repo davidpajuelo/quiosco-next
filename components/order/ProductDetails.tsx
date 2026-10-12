@@ -13,7 +13,7 @@ export default function ProductDetails({ item }: ProductDetailsProps) {
     const decreaseQuantity = useStore((state)=> state.decreaseQuantity)
     const removeItem = useStore((state)=> state.removeItem)
     return (
-        <div className="shadow space-y-1 p-4 bg-white  border-t border-gray-200 ">
+        <div className="shadow space-y-1 p-4  border-t border-gray-200 ">
             <div className="space-y-4">
                 <div className="flex justify-between items-start">
                     <p className="text-xl font-bold">{item.name} </p>
@@ -25,7 +25,7 @@ export default function ProductDetails({ item }: ProductDetailsProps) {
                         <XCircleIcon className="text-red-600 h-8 w-8" />
                     </button>
                 </div>
-                <p className="text-2xl text-amber-500 font-black">
+                <p className="text-2xl text-[#C65D3B] font-black">
                     {formatCurrency(item.price)}
                 </p>
                 <div className="flex gap-5 px-10 py-2 bg-gray-100 w-fit rounded-lg">
