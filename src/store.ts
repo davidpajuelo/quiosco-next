@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+import { create } from 'zustand' 
 import { OrderItem } from './types'
 import { Product } from './generated/prisma/client'
 
