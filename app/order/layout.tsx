@@ -1,6 +1,6 @@
 import OrderSidebar from "@/components/order/OrderSidebar";
 import OrderSummary from "@/components/order/OrderSummary";
-import CartButton from "@/components/order/CartButton";
+import CartButton from "@/components/ui/CartButton";
 import ToastNotification from "@/components/ui/ToastNotification";
 import { Fragment } from "react";
 

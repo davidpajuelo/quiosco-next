@@ -3,6 +3,7 @@ import{ prisma } from '@/src/lib/prisma'
 import { TABLE_COOKIE, readTableCookie } from '@/src/lib/table-session'
 import CategoryIcon from '../ui/CategoryIcon';
 import CategoryDrawer from './CategoryDrawer';
+import Logo from '../ui/Logo';
 
 
 async function getCategories(){
@@ -19,6 +20,7 @@ export default async function OrderSidebar() {
           Mesa {tableId}
         </p>
       )}
+      <Logo/>
       <CategoryDrawer>
         <nav className='md:mt-10'>
           {categories.map(category => (
