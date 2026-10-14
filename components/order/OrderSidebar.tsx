@@ -21,10 +21,6 @@ export default async function OrderSidebar() {
           Mesa {tableId}
         </p>
       )}
-<<<<<<< HEAD
-      */}
-=======
->>>>>>> admin
       <Logo/>
       <CategoryDrawer>
         <nav className='md:mt-10'>
