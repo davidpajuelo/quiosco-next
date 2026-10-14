@@ -28,7 +28,7 @@ export default function CartButton() {
             type="button"
             onClick={() => document.getElementById('pedido')?.scrollIntoView({ behavior: 'smooth' })}
             aria-label={`Ver mi pedido, ${count} productos`}
-            className="md:hidden fixed bottom-5 right-5 z-50 size-16 rounded-full bg-amber-400 shadow-lg flex items-center justify-center"
+            className="md:hidden fixed bottom-5 right-5 z-50 size-16 rounded-full bg-primary hover:bg-primary-dark shadow-lg flex items-center justify-center"
         >
             <svg
                 xmlns="http://www.w3.org/2000/svg"
