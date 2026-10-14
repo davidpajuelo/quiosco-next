@@ -26,7 +26,7 @@ function groupOrders(orders: OrderWithProducts[], grouping: Grouping): OrderGrou
     orders.forEach(order => {
         const table = order.tableId ?? 'Sin mesa'
         const key = grouping === 'table' ? table : `${table}|${order.name}`
-        const label = grouping === 'table' ? `Mesa: ${table}` : `Mesa: ${table} - ${order.name}`
+        const label = grouping === 'table' ? `Mesa ${table}` : `Mesa ${table} - ${order.name}`
         if (!groups.has(key)) groups.set(key, { key, label, orders: [], total: 0 })
         const group = groups.get(key)!
         group.orders.push(order)
@@ -83,23 +83,28 @@ export default function OrderList({ orders }: OrderListProps) {
             <div className="flex items-center justify-between gap-4">
                 <Heading>Administrar Pedidos</Heading>
 
-                <div className="relative" ref={menuRef}>
+                <div className="relative flex items-center gap-2" ref={menuRef}>
+                    {grouping !== 'none' && (
+                        <span className="text-sm font-medium text-black">
+                            Agrupado por: {groupingOptions.find(option => option.value === grouping)?.label}
+                        </span>
+                    )}
                     <button
                         type="button"
                         aria-label="Agrupar pedidos"
                         aria-haspopup="menu"
                         aria-expanded={isMenuOpen}
                         title="Agrupar pedidos"
-                        className={`p-2 rounded hover:bg-gray-200 cursor-pointer ${grouping !== 'none' ? 'text-amber-500' : 'text-gray-700'}`}
+                        className={`p-2 rounded hover:bg-gray-200 cursor-pointer ${grouping !== 'none' ? 'text-black' : 'text-gray-700'}`}
                         onClick={() => setIsMenuOpen(open => !open)}
                     >
-                        <FunnelIcon className="h-6 w-6" />
+                        <FunnelIcon className={`h-6 w-6 ${grouping !== 'none' ? 'fill-white stroke-[1.5]' : ''}`} />
                     </button>
 
                     {isMenuOpen && (
                         <ul
                             role="menu"
-                            className="absolute right-0 z-10 mt-2 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5"
+                            className="absolute right-0 top-full z-10 mt-2 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5"
                         >
                             {groupingOptions.map(option => (
                                 <li key={option.value} role="none">
@@ -131,7 +136,7 @@ export default function OrderList({ orders }: OrderListProps) {
                                 <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-lg font-medium text-gray-900 [&::-webkit-details-marker]:hidden">
                                     <span className="flex flex-wrap items-baseline gap-x-3">
                                         {group.label}
-                                        <span className="text-base font-semibold text-black">Total: {formatCurrency(group.total)}</span>
+                                        <span className="text-base text-black">Total: {formatCurrency(group.total)}</span>
                                     </span>
                                     <span className="flex items-center gap-2 text-sm text-black">
                                         {group.orders.length} {group.orders.length === 1 ? 'pedido' : 'pedidos'}

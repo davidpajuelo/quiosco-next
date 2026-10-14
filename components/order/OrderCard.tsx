@@ -17,7 +17,7 @@ export default function OrderCard({ order }: orderCardProps) {
         }
         toast.success(({ closeToast }) => (
             <div className="flex items-center justify-between gap-3">
-                <span>Orden completada - Mesa: {order.tableId}, Nombre: {order.name}</span>
+                <span>Orden {order.id} completada - Mesa: {order.tableId}, Nombre: {order.name}</span>
                 <button
                     type="button"
                     className="bg-primary hover:bg-primary-dark text-black px-1 py-1 rounded font-bold text-sm cursor-pointer"
@@ -38,7 +38,7 @@ export default function OrderCard({ order }: orderCardProps) {
             response.errors.forEach(issue => toast.error(issue.message))
             return
         }
-        toast.info(`Orden de Mesa: ${order.tableId}, Nombre: ${order.name} marcada como pendiente`)
+        toast.info(`Orden ${order.id} de Mesa: ${order.tableId}, Nombre: ${order.name} marcada como pendiente`)
     }
 
     return (

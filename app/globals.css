@@ -5,17 +5,27 @@
 :root {
   --color-primary: #8FA382;
   --color-primary-dark: #7A8B6F;
+  --color-background: #f9e6c1d1;
+  --color-background-light: #fdf5e6;
 }
 
 @layer base {
   body {
-    background-color: #f9e6c1d1;
+    background-color: var(--color-background);
   }
 }
 
-/* react-toastify fuerza sans-serif; heredamos Tajawal del body */
+/* react-toastify fuerza sans-serif y su propio fondo; heredamos Tajawal del body y usamos un tono claro del fondo de la app */
 .Toastify .Toastify__toast {
   font-family: inherit;
+  background-color: var(--color-background-light);
+}
+
+/* Icono y barra de progreso de toast.info, y barra de toast.success, con el verde de los botones */
+.Toastify {
+  --toastify-icon-color-info: var(--color-primary);
+  --toastify-color-progress-info: var(--color-primary);
+  --toastify-color-progress-success: var(--color-primary);
 }
 
 @layer utilities {
