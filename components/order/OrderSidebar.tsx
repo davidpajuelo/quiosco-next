@@ -20,7 +20,7 @@ export default async function OrderSidebar() {
         <p className={`text-5xl bg-primary text-black text-center font-bold uppercase py-2`}>
           Mesa {tableId}
         </p>
-      )}
+      )*/}
       <Logo/>
       <CategoryDrawer>
         <nav className='md:mt-10'>
