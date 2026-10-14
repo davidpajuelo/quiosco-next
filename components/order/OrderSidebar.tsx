@@ -1,6 +1,6 @@
-import { cookies } from 'next/headers'
+//import { cookies } from 'next/headers'
 import{ prisma } from '@/src/lib/prisma'
-import { TABLE_COOKIE, readTableCookie } from '@/src/lib/table-session'
+//import { TABLE_COOKIE, readTableCookie } from '@/src/lib/table-session'
 import CategoryIcon from '../ui/CategoryIcon';
 import CategoryDrawer from './CategoryDrawer';
 import Logo from '../ui/Logo';
@@ -12,7 +12,7 @@ async function getCategories(){
 
 export default async function OrderSidebar() {
   const categories = await getCategories();
-  const tableId = await readTableCookie(cookies().get(TABLE_COOKIE)?.value)
+  //const tableId = await readTableCookie(cookies().get(TABLE_COOKIE)?.value)
   return (
     <aside className="md:w-72 md:h-screen">
       {/*
