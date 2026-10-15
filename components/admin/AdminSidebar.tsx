@@ -4,7 +4,7 @@ import Logo from "@/components/ui/Logo";
 const adminNavigation = [
     {url: '/admin/orders', text: 'Ordenes', blank: false},
     {url: '/admin/products', text: 'Productos', blank: false},
-    {url: '/order/cafe', text: 'Ver Quiosco', blank: true},
+    {url: '/mesa/1', text: 'Ver Quiosco', blank: true},
 ]
 
 export default function AdminSidebar() {
