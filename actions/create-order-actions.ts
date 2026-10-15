@@ -3,7 +3,7 @@
 import { cookies, headers } from "next/headers"
 import { TABLE_COOKIE, readTableCookie } from "@/src/lib/table-session"
 import { prisma } from "@/src/lib/prisma"
-import { createCheckoutSession, getStripe } from "@/src/lib/stripe"
+import { createPaycometOrderReference, createPaymentForm } from "@/src/lib/paycomet"
 import { OrderSchema } from "@/src/schema"
 
 type CreateOrderResponse = { errors: { message: string }[] } | { url: string }
@@ -53,28 +53,25 @@ export async function createOrder(data: unknown): Promise<CreateOrderResponse> {
     }
     const total = items.reduce((total, item) => total + (item.price * item.quantity), 0)
 
-    let session
+    const paycometOrder = createPaycometOrderReference()
+    let paymentForm
     try{
-        session = await createCheckoutSession(items, origin)
+        paymentForm = await createPaymentForm(items, paycometOrder, origin)
     }catch (error){
         console.log(error)
         return {
             errors: [{ message: 'No se pudo iniciar el pago' }]
         }
     }
-    if (!session.url) {
-        return {
-            errors: [{ message: 'No se pudo iniciar el pago' }]
-        }
-    }
 
+    // Si el pedido no se guarda, la URL de pago nunca llega al cliente
     try{
         await prisma.order.create({
             data: {
                 name: result.data.name,
                 total,
                 tableId,
-                stripeCheckoutSessionId: session.id,
+                paycometOrder,
                 orderProducts: {
                     create: result.data.order.map( product => ({
                         productId: product.id,
@@ -85,14 +82,12 @@ export async function createOrder(data: unknown): Promise<CreateOrderResponse> {
         })
     }catch (error){
         console.log(error)
-        // Sin pedido guardado no se debe poder pagar esa sesión
-        await getStripe().checkout.sessions.expire(session.id).catch(console.log)
         return {
             errors: [{ message: 'No se pudo crear el pedido' }]
         }
     }
 
     return {
-        url: session.url
+        url: paymentForm.url
     }
 }

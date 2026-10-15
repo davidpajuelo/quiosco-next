@@ -36,7 +36,7 @@ export default function OrderSummary() {
         })
         return
     }
-    // Redirige al Checkout alojado de Stripe
+    // Redirige al formulario de pago alojado de PAYCOMET
     window.location.assign(response.url)
   }
   if (!category) return null

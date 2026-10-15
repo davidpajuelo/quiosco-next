@@ -113,6 +113,8 @@ export const OrderScalarFieldEnum = {
   paymentStatus: 'paymentStatus',
   stripeCheckoutSessionId: 'stripeCheckoutSessionId',
   stripePaymentIntentId: 'stripePaymentIntentId',
+  paycometOrder: 'paycometOrder',
+  paycometId: 'paycometId',
   createdAt: 'createdAt',
   paidAt: 'paidAt'
 } as const

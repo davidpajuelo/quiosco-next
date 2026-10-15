@@ -2,11 +2,11 @@ import Link from "next/link"
 import { prisma } from "@/src/lib/prisma"
 import { formatCurrency } from "@/src/utils"
 
-export default async function CheckoutSuccessPage({ searchParams }: { searchParams: { session_id?: string } }) {
-  const order = searchParams.session_id
+export default async function CheckoutSuccessPage({ searchParams }: { searchParams: { order?: string } }) {
+  const order = searchParams.order
     ? await prisma.order.findUnique({
         where: {
-          stripeCheckoutSessionId: searchParams.session_id
+          paycometOrder: searchParams.order
         }
       })
     : null
@@ -17,7 +17,7 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
         <>
           <h1 className="text-4xl">Gracias, {order.name}</h1>
           <p className="text-2xl">
-            {/* El pago lo confirma el webhook de Stripe, puede tardar unos segundos */}
+            {/* El pago lo confirma la notificación de PAYCOMET, puede tardar unos segundos */}
             {order.paymentStatus === 'paid'
               ? `Pago de ${formatCurrency(order.total)} recibido`
               : 'Estamos confirmando tu pago'}
