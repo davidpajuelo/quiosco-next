@@ -49,7 +49,7 @@ type KeyManualProps = {
 }
 
 // Key Manual: teclado para introducir importes a mano.
-// Se usa para el precio de los productos manuales y para el importe entregado (vueltas).
+// Se usa para el precio de los productos manuales, el de la ficha del producto y el importe entregado (vueltas).
 export default function KeyManual({ label, amount, onChange }: KeyManualProps) {
     const handleKey = (key: Key) => onChange(pressKey(amount, key))
 
