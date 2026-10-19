@@ -7,9 +7,10 @@ import Image from "next/image"
 
 type CategoryIconProps = {
     category: Category
+    basePath?: string
 }
 
-export default function CategoryIcon({ category }: CategoryIconProps) {
+export default function CategoryIcon({ category, basePath = '/order' }: CategoryIconProps) {
     const params = useParams<{category: string}>(
 
     )
@@ -25,7 +26,7 @@ export default function CategoryIcon({ category }: CategoryIconProps) {
             </div>
             <Link
                 className='text-lg font-bold'
-                href={`/order/${category.slug}`}
+                href={`${basePath}/${category.slug}`}
             >{category.name}</Link>
         </div>
     )

@@ -3,9 +3,15 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useStore } from '@/src/store'
 
-export default function CartButton() {
+type CartButtonProps = {
+    // Mostrar el botón aunque no haya categoría en la URL (p. ej. producto manual del admin)
+    alwaysVisible?: boolean
+}
+
+export default function CartButton({ alwaysVisible = false }: CartButtonProps) {
     const order = useStore((state) => state.order)
     const { category } = useParams<{ category?: string }>()
+    const visible = alwaysVisible || !!category
     const [summaryVisible, setSummaryVisible] = useState(false)
     const count = order.reduce((total, item) => total + item.quantity, 0)
 
@@ -21,7 +27,7 @@ export default function CartButton() {
         return () => observer.disconnect()
     }, [category])
 
-    if (!category || count === 0 || summaryVisible) return null
+    if (!visible || count === 0 || summaryVisible) return null
 
     return (
         <button

@@ -5,6 +5,7 @@ import { Product } from './generated/prisma/client'
 interface Store {
     order: OrderItem[]
     addToOrder: (product: Product) => void
+    addManualToOrder: (name: string, price: number) => void
     increaseQuantity: (id: Product['id']) => void
     decreaseQuantity: (id: Product['id']) => void
     removeItem: (id: Product['id']) => void
@@ -34,6 +35,20 @@ export const useStore = create<Store>((set, get) => (
                 order
             }))
 
+        },
+        addManualToOrder: (name, price) => {
+            // Id negativo para no chocar con los productos de la BD
+            const id = Math.min(0, ...get().order.map(item => item.id)) - 1
+            set((state) => ({
+                order: [...state.order, {
+                    id,
+                    name,
+                    price,
+                    quantity: 1,
+                    subtotal: price,
+                    manual: true
+                }]
+            }))
         },
         increaseQuantity: (id) => {
             set((state) => ({

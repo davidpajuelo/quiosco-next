@@ -3,6 +3,15 @@ import { toast } from "react-toastify"
 import { completeOrder, uncompleteOrder } from "@/actions/complete-order.actions"
 import { OrderWithProducts } from "@/src/types"
 import { formatCurrency } from "@/src/utils"
+import type { PaymentStatus } from "@/src/generated/prisma/enums"
+
+const paymentStatusLabels: Record<PaymentStatus, { label: string, className: string }> = {
+    pending: { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-800' },
+    paid: { label: 'Pagado', className: 'bg-green-100 text-green-800' },
+    cancelled: { label: 'Cancelado', className: 'bg-gray-200 text-gray-800' },
+    refunded: { label: 'Reembolsado', className: 'bg-blue-100 text-blue-800' },
+    payment_failed: { label: 'Pago fallido', className: 'bg-red-100 text-red-800' },
+}
 
 type orderCardProps = {
     order: OrderWithProducts
@@ -49,14 +58,19 @@ export default function OrderCard({ order }: orderCardProps) {
             <p className='text-3xl font-medium text-gray-900'>Nº Orden: { order.id } </p>
             <p className='text-2xl font-medium text-gray-900'>Nº Mesa: { order.tableId } </p>
             <p className='text-lg font-medium text-gray-900'>Cliente: {order.name}</p>
+            <p className='text-lg font-medium text-gray-900'>Estado del Pago: {''}
+                <span className={`px-2 py-1 rounded text-sm font-bold ${paymentStatusLabels[order.paymentStatus].className}`}>
+                    {paymentStatusLabels[order.paymentStatus].label}
+                </span>
+            </p>
             <div className='text-lg font-medium text-gray-900'>Productos: 
                 {order.orderProducts.map(product => (
-                    <div key={product.productId}
+                    <div key={product.id}
                     className="flex items-center gap-2 border-t border-grey-200 pt-4" >
                         <dt className="flex items-center text-sm text-grey-600">
                             <span>({product.quantity}) {''}</span>
                         </dt>
-                        <dd className="text-sm font-medium text-gray-900" > { product.product.name}</dd>
+                        <dd className="text-sm font-medium text-gray-900" > { product.product?.name ?? product.name}</dd>
                         </div>
                 ))}
             </div>
