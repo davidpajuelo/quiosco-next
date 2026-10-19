@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { prisma } from "@/src/lib/prisma"
 import { formatCurrency } from "@/src/utils"
+import { ADMIN_TABLE_ID } from "@/src/lib/table-session"
 
 export default async function CheckoutSuccessPage({ searchParams }: { searchParams: { session_id?: string } }) {
   const order = searchParams.session_id
@@ -26,7 +27,7 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
       ) : (
         <h1 className="text-4xl">Pedido no encontrado</h1>
       )}
-      <Link href="/order/cafe" className="inline-block py-2 px-5 rounded font-bold uppercase text-white bg-black">
+      <Link href={order?.tableId === ADMIN_TABLE_ID ? '/admin/quiosco' : '/order/cafe'} className="inline-block py-2 px-5 rounded font-bold uppercase text-white bg-black">
         Volver al Quiosco
       </Link>
     </main>
