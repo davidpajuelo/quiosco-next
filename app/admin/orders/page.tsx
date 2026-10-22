@@ -1,24 +1,21 @@
 import OrderList from '@/components/order/OrderList'
-import { prisma } from '@/src/lib/prisma'
+import { db } from '@/src/db'
+import { orders } from '@/src/db/schema'
+import { asc, eq } from 'drizzle-orm'
 import React from 'react'
 
 async function getPendingOrders() {
-  const orders = await prisma.order.findMany({
-    where: {
-      status: false
-    },
-    orderBy: {
-      date: 'asc'
-    },
-    include: {
+  return db.query.orders.findMany({
+    where: eq(orders.status, false),
+    orderBy: [asc(orders.date)],
+    with: {
       orderProducts: {
-        include: {
+        with: {
           product: true
         }
       }
     }
   })
-  return orders
 }
 
 export default async function Orders() {

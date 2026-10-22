@@ -1,5 +1,5 @@
 //import { cookies } from 'next/headers'
-import{ prisma } from '@/src/lib/prisma'
+import { db } from '@/src/db'
 //import { TABLE_COOKIE, readTableCookie } from '@/src/lib/table-session'
 import CategoryIcon from '../ui/CategoryIcon';
 import CategoryDrawer from './CategoryDrawer';
@@ -7,7 +7,7 @@ import Logo from '../ui/Logo';
 
 
 async function getCategories(){
-  return await prisma.category.findMany();
+  return await db.query.categories.findMany();
 }
 
 export default async function OrderSidebar() {

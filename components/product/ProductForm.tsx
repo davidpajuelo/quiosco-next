@@ -2,7 +2,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { toast } from 'react-toastify'
-import type { Category, Product } from '@/src/generated/prisma/client'
+import type { Category, Product } from '@/src/types'
 import type { ProductActionResponse } from '@/actions/product-actions'
 import { PRODUCT_IMAGE_TYPES, ProductImageSchema, ProductSchema, hasImage } from '@/src/schema'
 import { getImagePath } from '@/src/utils'

@@ -1,24 +1,34 @@
 import { NextResponse } from "next/server"
 import type Stripe from "stripe"
-import { prisma } from "@/src/lib/prisma"
+import { and, eq, inArray, notInArray, type SQL } from "drizzle-orm"
+import { db } from "@/src/db"
+import { orders, stripeEvents } from "@/src/db/schema"
 import { getStripe } from "@/src/lib/stripe"
-import { Prisma } from "@/src/generated/prisma/client"
+
+// El where es SQL, nunca SQL | undefined: update().where(undefined) actualizaría todos los pedidos
+type OrderUpdate = {
+    where: SQL
+    set: Partial<typeof orders.$inferInsert>
+}
+
+// and() devuelve SQL | undefined en sus tipos; con dos condiciones nunca es undefined
+function bySession(sessionId: string, status: SQL): SQL {
+    return and(eq(orders.stripeCheckoutSessionId, sessionId), status)!
+}
 
 // Traduce el evento de Stripe al cambio que hay que aplicar en el pedido
-async function getOrderUpdate(event: Stripe.Event): Promise<Prisma.OrderUpdateManyArgs | null> {
+async function getOrderUpdate(event: Stripe.Event): Promise<OrderUpdate | null> {
     switch (event.type) {
         case 'checkout.session.completed':
         case 'checkout.session.async_payment_succeeded': {
             const session = event.data.object
             if (session.payment_status !== 'paid') return null
             return {
-                where: {
-                    stripeCheckoutSessionId: session.id,
-                    paymentStatus: { notIn: ['paid', 'refunded'] }
-                },
-                data: {
+                where: bySession(session.id, notInArray(orders.paymentStatus, ['paid', 'refunded'])),
+                set: {
                     paymentStatus: 'paid',
                     paidAt: new Date(),
+                    // undefined se ignora en set, igual que en Prisma
                     stripePaymentIntentId: typeof session.payment_intent === 'string'
                         ? session.payment_intent
                         : session.payment_intent?.id
@@ -27,19 +37,13 @@ async function getOrderUpdate(event: Stripe.Event): Promise<Prisma.OrderUpdateMa
         }
         case 'checkout.session.async_payment_failed':
             return {
-                where: {
-                    stripeCheckoutSessionId: event.data.object.id,
-                    paymentStatus: 'pending'
-                },
-                data: { paymentStatus: 'payment_failed' }
+                where: bySession(event.data.object.id, eq(orders.paymentStatus, 'pending')),
+                set: { paymentStatus: 'payment_failed' }
             }
         case 'checkout.session.expired':
             return {
-                where: {
-                    stripeCheckoutSessionId: event.data.object.id,
-                    paymentStatus: { in: ['pending', 'payment_failed'] }
-                },
-                data: { paymentStatus: 'cancelled' }
+                where: bySession(event.data.object.id, inArray(orders.paymentStatus, ['pending', 'payment_failed'])),
+                set: { paymentStatus: 'cancelled' }
             }
         case 'payment_intent.payment_failed': {
             const paymentIntent = event.data.object
@@ -50,11 +54,8 @@ async function getOrderUpdate(event: Stripe.Event): Promise<Prisma.OrderUpdateMa
             const session = sessions.data[0]
             if (!session) return null
             return {
-                where: {
-                    stripeCheckoutSessionId: session.id,
-                    paymentStatus: 'pending'
-                },
-                data: {
+                where: bySession(session.id, eq(orders.paymentStatus, 'pending')),
+                set: {
                     paymentStatus: 'payment_failed',
                     stripePaymentIntentId: paymentIntent.id
                 }
@@ -83,15 +84,15 @@ export async function POST(request: Request) {
 
     try {
         const orderUpdate = await getOrderUpdate(event)
-        await prisma.$transaction(async (tx) => {
+        await db.transaction(async (tx) => {
             // Idempotencia: si el evento ya está registrado no se vuelve a procesar.
             // Va en la misma transacción que el pedido para que, si falla, Stripe lo reintente.
-            const { count } = await tx.stripeEvent.createMany({
-                data: [{ stripeEventId: event.id, eventType: event.type }],
-                skipDuplicates: true
-            })
-            if (count === 0 || !orderUpdate) return
-            await tx.order.updateMany(orderUpdate)
+            const inserted = await tx.insert(stripeEvents)
+                .values({ stripeEventId: event.id, eventType: event.type })
+                .onConflictDoNothing({ target: stripeEvents.stripeEventId })
+                .returning({ id: stripeEvents.id })
+            if (inserted.length === 0 || !orderUpdate) return
+            await tx.update(orders).set(orderUpdate.set).where(orderUpdate.where)
         })
     } catch (error) {
         console.log(error)

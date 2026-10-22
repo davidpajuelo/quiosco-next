@@ -1,9 +1,8 @@
 "use client"
 import { toast } from "react-toastify"
 import { completeOrder, uncompleteOrder } from "@/actions/complete-order.actions"
-import { OrderWithProducts } from "@/src/types"
+import type { OrderWithProducts, PaymentStatus } from "@/src/types"
 import { formatCurrency } from "@/src/utils"
-import type { PaymentStatus } from "@/src/generated/prisma/enums"
 
 const paymentStatusLabels: Record<PaymentStatus, { label: string, className: string }> = {
     pending: { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-800' },

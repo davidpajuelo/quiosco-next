@@ -1,5 +1,5 @@
 'use client'
-import { Category } from '@/src/generated/prisma/client'
+import type { Category } from '@/src/types'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import React from 'react'

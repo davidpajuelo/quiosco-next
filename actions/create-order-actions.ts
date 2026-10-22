@@ -2,10 +2,12 @@
 
 import { cookies, headers } from "next/headers"
 import { ADMIN_TABLE_ID, TABLE_COOKIE, readTableCookie } from "@/src/lib/table-session"
-import { prisma } from "@/src/lib/prisma"
+import { eq, inArray } from "drizzle-orm"
+import { db } from "@/src/db"
+import { orderProducts, orders, products, tables } from "@/src/db/schema"
 import { CheckoutItem, createCheckoutSession, getStripe } from "@/src/lib/stripe"
 import { AdminOrderSchema, ManualProductSchema, OrderSchema, isAmountEnough } from "@/src/schema"
-import { Prisma } from "@/src/generated/prisma/client"
+import type { NewOrderLine } from "@/src/types"
 import { z } from "zod"
 
 type OrderErrors = { errors: { message: string }[] }
@@ -14,7 +16,7 @@ type ValidOrder = {
     name: string
     total: number
     items: CheckoutItem[]
-    orderProducts: Prisma.OrderProductUncheckedCreateWithoutOrderInput[]
+    orderProducts: NewOrderLine[]
 }
 
 // El cliente va a la pasarela de pago (url); el admin solo recibe el pedido creado (orderId)
@@ -24,7 +26,7 @@ export type CreateOrderResponse = OrderErrors | { url: string } | { orderId: num
 export async function createOrder(data: unknown): Promise<CreateOrderResponse> {
     // La mesa sale de la cookie, y se comprueba que exista
     const tableId = readTableCookie(cookies().get(TABLE_COOKIE)?.value)
-    const table = tableId ? await prisma.table.findUnique({ where: { id: tableId } }) : null
+    const table = tableId ? await db.query.tables.findFirst({ where: eq(tables.id, tableId) }) : null
     if (!table) {
         return {
             errors: [{ message: 'Mesa no identificada, escanea el QR de tu mesa' }]
@@ -63,16 +65,18 @@ export async function createOrder(data: unknown): Promise<CreateOrderResponse> {
     }
 
     try{
-        await prisma.order.create({
-            data: {
+        // Pedido y líneas en la misma transacción: nunca un pedido sin líneas
+        await db.transaction(async (tx) => {
+            const [created] = await tx.insert(orders).values({
                 name: order.name,
                 total: order.total,
                 tableId: table.id,
-                stripeCheckoutSessionId: session.id,
-                orderProducts: {
-                    create: order.orderProducts
-                }
-            }
+                stripeCheckoutSessionId: session.id
+            }).returning({ id: orders.id })
+            // OrderSchema exige al menos una línea; values([]) lanzaría error
+            await tx.insert(orderProducts).values(
+                order.orderProducts.map(line => ({ ...line, orderId: created.id }))
+            )
         })
     }catch (error){
         console.log(error)
@@ -108,22 +112,19 @@ export async function createAdminOrder(data: unknown): Promise<CreateOrderRespon
     }
 
     try{
-        await prisma.table.upsert({
-            where: { id: ADMIN_TABLE_ID },
-            update: {},
-            create: { id: ADMIN_TABLE_ID }
-        })
-        const { id } = await prisma.order.create({
-            data: {
+        const id = await db.transaction(async (tx) => {
+            await tx.insert(tables).values({ id: ADMIN_TABLE_ID }).onConflictDoNothing()
+            const [created] = await tx.insert(orders).values({
                 name: order.name,
                 total: order.total,
                 tableId: ADMIN_TABLE_ID,
                 paymentStatus: 'paid',
-                paidAt: new Date(),
-                orderProducts: {
-                    create: order.orderProducts
-                }
-            }
+                paidAt: new Date()
+            }).returning({ id: orders.id })
+            await tx.insert(orderProducts).values(
+                order.orderProducts.map(line => ({ ...line, orderId: created.id }))
+            )
+            return created.id
         })
         return {
             orderId: id
@@ -140,13 +141,13 @@ export async function createAdminOrder(data: unknown): Promise<CreateOrderRespon
 // Solo el quiosco de admin puede enviar productos manuales, con nombre y precio del cliente.
 async function validateOrder(data: z.infer<typeof OrderSchema>, allowManual: boolean): Promise<OrderErrors | ValidOrder> {
     // Los precios se leen de la BD, nunca del cliente (salvo los productos manuales del admin)
-    const products = await prisma.product.findMany({
-        where: {
-            id: { in: data.order.filter(item => !item.manual).map(item => item.id) }
-        }
-    })
+    // Los pedidos del admin pueden ser solo de productos manuales: sin ids no hace falta consultar
+    const ids = data.order.filter(item => !item.manual).map(item => item.id)
+    const dbProducts = ids.length
+        ? await db.select().from(products).where(inArray(products.id, ids))
+        : []
     const items: CheckoutItem[] = []
-    const orderProducts: Prisma.OrderProductUncheckedCreateWithoutOrderInput[] = []
+    const lines: NewOrderLine[] = []
     for (const item of data.order) {
         if (item.manual) {
             const manual = ManualProductSchema.safeParse(item)
@@ -161,10 +162,10 @@ async function validateOrder(data: z.infer<typeof OrderSchema>, allowManual: boo
                 quantity: item.quantity
             }
             items.push(line)
-            orderProducts.push(line)
+            lines.push(line)
             continue
         }
-        const product = products.find(product => product.id === item.id)
+        const product = dbProducts.find(product => product.id === item.id)
         if (!product) {
             return {
                 errors: [{ message: 'Hay errores en el Pedido' }]
@@ -175,7 +176,7 @@ async function validateOrder(data: z.infer<typeof OrderSchema>, allowManual: boo
             price: product.price,
             quantity: item.quantity
         })
-        orderProducts.push({
+        lines.push({
             productId: product.id,
             quantity: item.quantity
         })
@@ -185,6 +186,6 @@ async function validateOrder(data: z.infer<typeof OrderSchema>, allowManual: boo
         name: data.name,
         total: items.reduce((total, item) => total + (item.price * item.quantity), 0),
         items,
-        orderProducts
+        orderProducts: lines
     }
 }

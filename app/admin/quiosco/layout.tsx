@@ -1,4 +1,4 @@
-import { prisma } from "@/src/lib/prisma"
+import { db } from "@/src/db"
 import CategoryIcon from "@/components/ui/CategoryIcon"
 import OrderSummary from "@/components/order/OrderSummary"
 import CartButton from "@/components/ui/CartButton"
@@ -6,7 +6,7 @@ import ManualProductLink from "@/components/admin/ManualProductLink"
 import { createAdminOrder } from "@/actions/create-order-actions"
 
 async function getCategories(){
-  return await prisma.category.findMany()
+  return await db.query.categories.findMany()
 }
 
 // El quiosco dentro del panel de administración; los pedidos van a la Mesa 0

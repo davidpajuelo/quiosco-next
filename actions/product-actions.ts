@@ -1,7 +1,9 @@
 "use server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { prisma } from "@/src/lib/prisma"
+import { eq } from "drizzle-orm"
+import { db } from "@/src/db"
+import { categories, orderProducts, products } from "@/src/db/schema"
 import { deleteProductImage, saveProductImage } from "@/src/lib/product-images"
 import { ProductIdSchema, ProductImageSchema, ProductSchema, hasImage } from "@/src/schema"
 
@@ -16,7 +18,11 @@ function parseProduct(formData: FormData) {
 }
 
 async function categoryExists(id: number) {
-    return !!await prisma.category.findUnique({ where: { id } })
+    return !!await db.query.categories.findFirst({ where: eq(categories.id, id), columns: { id: true } })
+}
+
+function findProduct(id: number) {
+    return db.query.products.findFirst({ where: eq(products.id, id) })
 }
 
 // El listado del admin y las cartas de cliente y quiosco muestran los productos
@@ -44,9 +50,7 @@ export async function createProduct(formData: FormData): Promise<ProductActionRe
     let imageName: string | undefined
     try {
         imageName = await saveProductImage(image.data)
-        await prisma.product.create({
-            data: { ...result.data, image: imageName }
-        })
+        await db.insert(products).values({ ...result.data, image: imageName })
     } catch (error) {
         console.log(error)
         if (imageName) await deleteProductImage(imageName)
@@ -60,7 +64,7 @@ export async function createProduct(formData: FormData): Promise<ProductActionRe
 // Sin imagen nueva se mantiene la actual
 export async function updateProduct(id: number, formData: FormData): Promise<ProductActionResponse> {
     const productId = ProductIdSchema.safeParse(id)
-    const product = productId.success ? await prisma.product.findUnique({ where: { id: productId.data } }) : null
+    const product = productId.success ? await findProduct(productId.data) : null
     if (!product) {
         return { errors: [{ message: 'El producto no existe' }] }
     }
@@ -83,10 +87,12 @@ export async function updateProduct(id: number, formData: FormData): Promise<Pro
     let imageName: string | undefined
     try {
         if (image?.success) imageName = await saveProductImage(image.data)
-        await prisma.product.update({
-            where: { id: product.id },
-            data: { ...result.data, image: imageName ?? product.image }
-        })
+        const updated = await db.update(products)
+            .set({ ...result.data, image: imageName ?? product.image })
+            .where(eq(products.id, product.id))
+            .returning({ id: products.id })
+        // Drizzle no lanza si lo han borrado entretanto; así la imagen nueva se borra en el catch
+        if (updated.length === 0) throw new Error(`Producto ${product.id} no encontrado`)
     } catch (error) {
         console.log(error)
         if (imageName) await deleteProductImage(imageName)
@@ -104,19 +110,18 @@ export type DeleteProductResponse = ProductActionResponse | { success: true }
 // para que los pedidos sigan mostrándolo
 export async function deleteProduct(id: number): Promise<DeleteProductResponse> {
     const productId = ProductIdSchema.safeParse(id)
-    const product = productId.success ? await prisma.product.findUnique({ where: { id: productId.data } }) : null
+    const product = productId.success ? await findProduct(productId.data) : null
     if (!product) {
         return { errors: [{ message: 'El producto no existe' }] }
     }
 
     try {
-        await prisma.$transaction([
-            prisma.orderProduct.updateMany({
-                where: { productId: product.id },
-                data: { productId: null, name: product.name, price: product.price }
-            }),
-            prisma.product.delete({ where: { id: product.id } })
-        ])
+        await db.transaction(async (tx) => {
+            await tx.update(orderProducts)
+                .set({ productId: null, name: product.name, price: product.price })
+                .where(eq(orderProducts.productId, product.id))
+            await tx.delete(products).where(eq(products.id, product.id))
+        })
     } catch (error) {
         console.log(error)
         return { errors: [{ message: 'No se pudo borrar el producto' }] }

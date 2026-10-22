@@ -1,23 +1,21 @@
 import Link from 'next/link'
 import ProductTable from '@/components/product/ProductTable'
 import Heading from '@/components/ui/Heading'
-import { prisma } from '@/src/lib/prisma'
+import { db } from '@/src/db'
+import { products } from '@/src/db/schema'
+import { asc } from 'drizzle-orm'
 
 async function getProducts() {
-  const products = await prisma.product.findMany({
-    orderBy: [
-      { categoryId: 'asc' },
-      { name: 'asc' }
-    ],
-    include: {
+  return db.query.products.findMany({
+    orderBy: [asc(products.categoryId), asc(products.name)],
+    with: {
       category: true
     }
   })
-  return products
 }
 
 export default async function ProductsPage() {
-  const products = await getProducts()
+  const productList = await getProducts()
   return (
     <>
       <Heading>Administrar Productos</Heading>
@@ -29,7 +27,7 @@ export default async function ProductsPage() {
           Crear producto
         </Link>
       </div>
-      <ProductTable products={products} />
+      <ProductTable products={productList} />
     </>
   )
 }

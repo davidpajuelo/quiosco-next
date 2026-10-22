@@ -1,6 +1,8 @@
 "use server"
 import { revalidatePath } from "next/cache"
-import { prisma } from "@/src/lib/prisma"
+import { eq } from "drizzle-orm"
+import { db } from "@/src/db"
+import { orders } from "@/src/db/schema"
 import { OrderIdSchema } from "@/src/schema"
 
 export async function completeOrder(formdata: FormData) {
@@ -13,15 +15,14 @@ export async function completeOrder(formdata: FormData) {
         return { errors: result.error.issues }
     }
     try {
-        await prisma.order.update({
-            where: {
-                id: result.data.order_id
-            },
-            data: {
-                status: true,
-                orderReadyAt: new Date(Date.now())
-            }
-        })
+        const updated = await db.update(orders)
+            .set({ status: true, orderReadyAt: new Date(Date.now()) })
+            .where(eq(orders.id, result.data.order_id))
+            .returning({ id: orders.id })
+        // Drizzle no lanza si el pedido no existe
+        if (updated.length === 0) {
+            return { errors: [{ message: 'No se pudo completar la orden' }] }
+        }
         revalidatePath('/admin/orders')
         return { success: true }
     } catch (error) {
@@ -37,15 +38,13 @@ export async function uncompleteOrder(orderId: number) {
         return { errors: result.error.issues }
     }
     try {
-        await prisma.order.update({
-            where: {
-                id: result.data.order_id
-            },
-            data: {
-                status: false,
-                orderReadyAt: null
-            }
-        })
+        const updated = await db.update(orders)
+            .set({ status: false, orderReadyAt: null })
+            .where(eq(orders.id, result.data.order_id))
+            .returning({ id: orders.id })
+        if (updated.length === 0) {
+            return { errors: [{ message: 'No se pudo deshacer la orden' }] }
+        }
         revalidatePath('/admin/orders')
         return { success: true }
     } catch (error) {

@@ -1,4 +1,4 @@
-import { Product } from "@/src/generated/prisma/client"
+import type { Product } from "@/src/types"
 import { formatCurrency, getImagePath } from "@/src/utils"
 import Image from "next/image"
 import AddProductButton from "./AddProductButton"

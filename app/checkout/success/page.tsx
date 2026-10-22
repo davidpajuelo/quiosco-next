@@ -1,13 +1,13 @@
 import Link from "next/link"
-import { prisma } from "@/src/lib/prisma"
+import { db } from "@/src/db"
+import { orders } from "@/src/db/schema"
 import { formatCurrency } from "@/src/utils"
+import { eq } from "drizzle-orm"
 
 export default async function CheckoutSuccessPage({ searchParams }: { searchParams: { session_id?: string } }) {
   const order = searchParams.session_id
-    ? await prisma.order.findUnique({
-        where: {
-          stripeCheckoutSessionId: searchParams.session_id
-        }
+    ? await db.query.orders.findFirst({
+        where: eq(orders.stripeCheckoutSessionId, searchParams.session_id)
       })
     : null
 
