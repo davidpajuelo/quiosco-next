@@ -18,6 +18,9 @@ async function main(){
         await prisma.product.createMany({
             data: products
         })
+        await prisma.table.createMany({
+            data: ['0', '1', '2', '3'].map(id => ({ id }))
+        })
         console.log('Seed ejecutado correctamente')
     } catch (error){
         console.log(error)

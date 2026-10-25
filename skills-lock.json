@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "drizzle-orm": {
+      "source": "Spardutti/claude-skills",
+      "sourceType": "github",
+      "skillPath": "skills/drizzle-orm/SKILL.md",
+      "computedHash": "00c29dd6e6ed9f83fcc43123edba9ae7a22d3eb3b8e68162e19ba05e557dfa16"
+    },
     "prisma-cli": {
       "source": "prisma/skills",
       "sourceType": "github",
