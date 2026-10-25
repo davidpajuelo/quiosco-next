@@ -2,20 +2,21 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { PencilSquareIcon } from '@heroicons/react/24/outline'
+import { tabClassName } from '@/components/order/CategoryTab'
 
 export const MANUAL_PRODUCT_PATH = '/admin/quiosco/manual-product'
 
-// Va al final de las categorías del quiosco de admin, con el mismo aspecto que CategoryIcon
+// Primera pestaña de la barra de categorías del quiosco de admin, con el mismo aspecto que CategoryTab
 export default function ManualProductLink() {
-    const pathname = usePathname()
+    const active = usePathname() === MANUAL_PRODUCT_PATH
     return (
-        <div className={`${pathname === MANUAL_PRODUCT_PATH ? 'bg-[#C65D3B]' : ''} flex items-center gap-4 w-full border-t border-gray-200 p-3
-        last-of-type:border-b`}>
-            <PencilSquareIcon className='size-16 p-2' aria-hidden='true' />
-            <Link
-                className='text-lg font-bold'
-                href={MANUAL_PRODUCT_PATH}
-            >Producto manual</Link>
-        </div>
+        <Link
+            href={MANUAL_PRODUCT_PATH}
+            aria-current={active ? 'page' : undefined}
+            className={tabClassName(active)}
+        >
+            <PencilSquareIcon className='size-12 md:size-14 p-1' aria-hidden='true' />
+            <span className='text-sm md:text-base font-bold text-center leading-tight'>Producto manual</span>
+        </Link>
     )
 }

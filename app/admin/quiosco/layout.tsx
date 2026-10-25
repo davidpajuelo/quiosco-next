@@ -1,5 +1,6 @@
 import { db } from "@/src/db"
-import CategoryIcon from "@/components/ui/CategoryIcon"
+import CategoryNav from "@/components/order/CategoryNav"
+import CategoryTab from "@/components/order/CategoryTab"
 import OrderSummary from "@/components/order/OrderSummary"
 import CartButton from "@/components/ui/CartButton"
 import ManualProductLink from "@/components/admin/ManualProductLink"
@@ -9,25 +10,27 @@ async function getCategories(){
   return await db.query.categories.findMany()
 }
 
-// El quiosco dentro del panel de administración; los pedidos van a la Mesa 0
+// El quiosco dentro del panel de administración; los pedidos van a la Mesa 0.
+// -m-5 anula el padding del <main> del admin para que la barra ocupe todo el ancho
+// y, en escritorio, el quiosco llene la pantalla con su propio scroll
 export default async function AdminKioskLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const categories = await getCategories()
   return (
-    <div className="md:flex gap-5">
-      <nav className="md:w-64 md:sticky md:top-0 md:self-start mb-5 md:mb-0">
+    <div className="-m-5 md:flex md:flex-col md:h-screen">
+      <CategoryNav>
+        <ManualProductLink />
         {categories.map(category => (
-          <CategoryIcon
+          <CategoryTab
             key={category.id}
             category={category}
             basePath="/admin/quiosco"
           />
         ))}
-        <ManualProductLink />
-      </nav>
-      <div className="md:flex-1">
-        {children}
-      </div>
-      <div className="md:sticky md:top-0 md:self-start">
+      </CategoryNav>
+      <div className="md:flex md:flex-1 md:min-h-0">
+        <div className="md:flex-1 md:overflow-y-auto p-5">
+          {children}
+        </div>
         <OrderSummary submitOrder={createAdminOrder} alwaysVisible admin />
       </div>
       <CartButton alwaysVisible />
