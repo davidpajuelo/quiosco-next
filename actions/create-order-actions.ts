@@ -1,5 +1,6 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { cookies, headers } from "next/headers"
 import { ADMIN_TABLE_ID, TABLE_COOKIE, readTableCookie } from "@/src/lib/table-session"
 import { eq, inArray } from "drizzle-orm"
@@ -95,6 +96,25 @@ export async function createOrder(data: unknown): Promise<CreateOrderResponse> {
 // Pedidos hechos desde la vista del quiosco en el panel de administración (Mesa 0).
 // No pasan por la pasarela: se cobran en el local y se guardan como pagados.
 export async function createAdminOrder(data: unknown): Promise<CreateOrderResponse> {
+    return saveAdminOrder(ADMIN_TABLE_ID, data)
+}
+
+// Pedido tomado por el admin para una mesa del plano de una sala; se cobra igual que en el quiosco
+export async function createTableOrder(tableId: string, data: unknown): Promise<CreateOrderResponse> {
+    const table = typeof tableId === 'string'
+        ? await db.query.tables.findFirst({ where: eq(tables.id, tableId) })
+        : null
+    if (!table) {
+        return {
+            errors: [{ message: 'La mesa no existe' }]
+        }
+    }
+    const response = await saveAdminOrder(table.id, data)
+    if ('orderId' in response) revalidatePath('/admin/salas', 'layout')
+    return response
+}
+
+async function saveAdminOrder(tableId: string, data: unknown): Promise<CreateOrderResponse> {
     const result = AdminOrderSchema.safeParse(data)
     if (!result.success){
         return {
@@ -113,11 +133,11 @@ export async function createAdminOrder(data: unknown): Promise<CreateOrderRespon
 
     try{
         const id = await db.transaction(async (tx) => {
-            await tx.insert(tables).values({ id: ADMIN_TABLE_ID }).onConflictDoNothing()
+            if (tableId === ADMIN_TABLE_ID) await tx.insert(tables).values({ id: ADMIN_TABLE_ID }).onConflictDoNothing()
             const [created] = await tx.insert(orders).values({
                 name: order.name,
                 total: order.total,
-                tableId: ADMIN_TABLE_ID,
+                tableId,
                 paymentStatus: 'paid',
                 paidAt: new Date()
             }).returning({ id: orders.id })

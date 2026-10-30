@@ -1,12 +1,17 @@
 import Link from "next/link"
 
-export default function GoBackLink() {
+type GoBackLinkProps = {
+    href?: string
+    text?: string
+}
+
+export default function GoBackLink({ href = '/admin/products', text = 'Volver a productos' }: GoBackLinkProps) {
     return (
         <Link
-            href="/admin/products"
+            href={href}
             className="inline-block my-5 py-2 px-6 rounded border-2 border-black font-bold uppercase"
         >
-            ← Volver a productos
+            ← {text}
         </Link>
     )
 }

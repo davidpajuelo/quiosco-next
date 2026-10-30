@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ADMIN_TABLE_ID } from '@/src/lib/table-session'
 
 export const OrderSchema = z.object({
     name: z.string()
@@ -83,3 +84,61 @@ export const OrderIdSchema = z.object({
                     .transform((value) => parseInt(value))
                     .refine(value => value > 0, { message: 'Hay errores' })
 })
+
+export const RoomIdSchema = z.coerce.number().int().positive()
+
+export const RoomNameSchema = z.string({ error: 'El nombre de la sala es obligatorio' })
+    .trim()
+    .min(1, 'El nombre de la sala es obligatorio')
+    .max(60, 'El nombre de la sala es demasiado largo')
+
+// Va en la URL del QR (/mesa/<código>)
+export const TableCodeSchema = z.string()
+    .trim()
+    .min(1, 'Cada mesa y taburete necesita un código')
+    .max(20, 'El código es demasiado largo')
+    .regex(/^[A-Za-z0-9_-]+$/, 'El código solo puede tener letras, números, - y _')
+    .refine(code => code !== ADMIN_TABLE_ID, `El código ${ADMIN_TABLE_ID} está reservado para el quiosco de admin`)
+
+// Medidas del plano en centímetros
+const coordinate = z.number().finite().min(-100000).max(100000)
+const size = z.number().finite().min(10, 'Un elemento mide como mínimo 10 cm').max(10000, 'Un elemento mide como máximo 100 m')
+
+export const RoomElementSchema = z.object({
+    kind: z.enum(['table', 'stool', 'bar', 'obstacle']),
+    shape: z.enum(['rect', 'circle']),
+    x: coordinate,
+    y: coordinate,
+    width: size,
+    height: size,
+    rotation: z.number().finite().min(-360).max(360),
+    label: z.string().trim().max(40, 'La etiqueta es demasiado larga').nullable(),
+    code: z.string().nullable()
+}).superRefine((element, ctx) => {
+    const isTable = element.kind === 'table' || element.kind === 'stool'
+    if (!isTable) {
+        if (element.code !== null) ctx.addIssue({ code: 'custom', message: 'Solo las mesas y los taburetes llevan código' })
+        return
+    }
+    const code = TableCodeSchema.safeParse(element.code ?? '')
+    if (!code.success) code.error.issues.forEach(issue => ctx.addIssue({ code: 'custom', message: issue.message }))
+})
+
+export const RoomLayoutSchema = z.object({
+    name: RoomNameSchema,
+    outline: z.array(z.object({ x: coordinate, y: coordinate }))
+        .min(3, 'El contorno de la sala necesita al menos 3 puntos')
+        .max(100, 'El contorno de la sala tiene demasiados puntos'),
+    elements: z.array(RoomElementSchema).max(500, 'La sala tiene demasiados elementos')
+}).superRefine((layout, ctx) => {
+    const seen = new Set<string>()
+    for (const element of layout.elements) {
+        const code = element.code?.trim()
+        if (!code) continue
+        if (seen.has(code)) ctx.addIssue({ code: 'custom', message: `El código ${code} está repetido` })
+        seen.add(code)
+    }
+})
+
+export type RoomLayout = z.input<typeof RoomLayoutSchema>
+export type RoomLayoutElement = z.input<typeof RoomElementSchema>

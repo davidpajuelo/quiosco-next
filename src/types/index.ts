@@ -1,4 +1,5 @@
-import type { categories, orderProducts, orders, paymentStatus, products } from "../db/schema"
+import type { categories, orderProducts, orders, paymentStatus, products, roomElementKind, roomElementShape, roomElements, rooms } from "../db/schema"
+export type { RoomPoint } from "../db/schema"
 
 export type Category = typeof categories.$inferSelect
 export type Product = typeof products.$inferSelect
@@ -25,3 +26,8 @@ export type OrderWithProducts = Order & {
 export type ProductWithCategory = Product & {
     category: Category
 }
+
+export type Room = typeof rooms.$inferSelect
+export type RoomElement = typeof roomElements.$inferSelect
+export type RoomElementKind = (typeof roomElementKind.enumValues)[number]
+export type RoomElementShape = (typeof roomElementShape.enumValues)[number]

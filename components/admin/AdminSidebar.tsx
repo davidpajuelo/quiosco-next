@@ -4,6 +4,8 @@ import Logo from "@/components/ui/Logo";
 const adminNavigation = [
     {url: '/admin/orders', text: 'Ordenes', blank: false},
     {url: '/admin/products', text: 'Productos', blank: false},
+    {url: '/admin/salas', text: 'Salas', blank: false},
+    {url: '/admin/rooms', text: 'Crear/Editar Salas', blank: false},
     {url: '/admin/quiosco', text: 'Ver Quiosco', blank: false},
 ]
 
