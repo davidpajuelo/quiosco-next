@@ -104,6 +104,15 @@ export const OrderIdsSchema = z.array(z.number().int().positive(), { error: 'Hay
     .min(1, 'No hay pedidos que cobrar')
     .max(200, 'Hay demasiados pedidos')
 
+// Productos (líneas de pedido) que se cobran juntos con Dividir Pago y cuántos de cada uno
+export const LinePaymentSchema = z.array(z.object({
+    id: z.number().int().positive(),
+    quantity: z.number().int().positive('La cantidad a pagar no es válida')
+}), { error: 'Hay errores' })
+    .min(1, 'Selecciona algún producto')
+    .max(500, 'Hay demasiados productos')
+    .refine(lines => new Set(lines.map(line => line.id)).size === lines.length, 'Hay productos repetidos')
+
 export const RoomIdSchema = z.coerce.number().int().positive()
 
 export const RoomNameSchema = z.string({ error: 'El nombre de la sala es obligatorio' })

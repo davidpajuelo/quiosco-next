@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type Stripe from "stripe"
 import { and, eq, inArray, notInArray, type SQL } from "drizzle-orm"
 import { db } from "@/src/db"
-import { orders, stripeEvents } from "@/src/db/schema"
+import { orderProducts, orders, stripeEvents } from "@/src/db/schema"
 import { getStripe } from "@/src/lib/stripe"
 
 // El where es SQL, nunca SQL | undefined: update().where(undefined) actualizaría todos los pedidos
@@ -92,7 +92,14 @@ export async function POST(request: Request) {
                 .onConflictDoNothing({ target: stripeEvents.stripeEventId })
                 .returning({ id: stripeEvents.id })
             if (inserted.length === 0 || !orderUpdate) return
-            await tx.update(orders).set(orderUpdate.set).where(orderUpdate.where)
+            const updated = await tx.update(orders).set(orderUpdate.set).where(orderUpdate.where)
+                .returning({ id: orders.id })
+            // Pedido pagado entero: todos sus productos quedan como Producto Pagado
+            if (orderUpdate.set.paymentStatus === 'paid' && updated.length > 0) {
+                await tx.update(orderProducts)
+                    .set({ paid: true })
+                    .where(inArray(orderProducts.orderId, updated.map(order => order.id)))
+            }
         })
     } catch (error) {
         console.log(error)

@@ -15,6 +15,13 @@
       "when": 1792942360457,
       "tag": "0001_rooms",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793981976607,
+      "tag": "0002_order_product_paid",
+      "breakpoints": true
     }
   ]
 }

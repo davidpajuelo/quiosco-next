@@ -7,17 +7,25 @@ import OrderSummary from '@/components/order/OrderSummary'
 import RoomPlanView from '@/components/room/RoomPlanView'
 import Heading from '@/components/ui/Heading'
 import { db } from '@/src/db'
-import { orders, roomElements, rooms } from '@/src/db/schema'
+import { orderProducts, orders, roomElements, rooms } from '@/src/db/schema'
 import { RoomIdSchema } from '@/src/schema'
 import type { TableOrderStats } from '@/src/types'
 import { formatCurrency } from '@/src/utils'
+import { formatSelection, fromCents, parseSelection, remainingCents, toCents } from '@/src/utils/payments'
 
 // Los pedidos cambian sin pasar por este panel (clientes desde el QR, webhook de Stripe)
 export const dynamic = 'force-dynamic'
 
 const HISTORY_LIMIT = 10
-// Valor de ?cobrar= para cobrar todos los pedidos Pendientes de pago de la mesa
+// Valores de ?cobrar=, además del id de una comanda:
+// todos los pedidos Pendientes de pago de la mesa
 const PAY_ALL = 'todo'
+// Dividir Pago: elegir los productos sin pagar (los ya elegidos van en ?lineas=)
+const SPLIT = 'dividir'
+// Cobro de los productos de ?lineas=
+const PAY_LINES = 'lineas'
+
+type OrderSummaryProps = React.ComponentProps<typeof OrderSummary>
 
 async function getRoom(id: string) {
   const roomId = RoomIdSchema.safeParse(id)
@@ -34,16 +42,20 @@ async function getRoom(id: string) {
 const isPending = () => or(eq(orders.status, false), eq(orders.paymentStatus, 'pending'))
 
 // Resumen de los pedidos pendientes de cada mesa, con el importe Pendiente de pago calculado
+// descontando los Productos Pagados
 async function getTableStats(codes: string[]): Promise<Record<string, TableOrderStats>> {
   if (codes.length === 0) return {}
-  const rows = await db.select({
-    tableId: orders.tableId,
-    status: orders.status,
-    paymentStatus: orders.paymentStatus,
-    total: orders.total
+  const rows = await db.query.orders.findMany({
+    columns: { tableId: true, status: true, paymentStatus: true, total: true },
+    where: and(inArray(orders.tableId, codes), isPending()),
+    with: {
+      orderProducts: {
+        columns: { id: true, quantity: true, price: true, paid: true },
+        where: eq(orderProducts.paid, true),
+        with: { product: { columns: { price: true } } }
+      }
+    }
   })
-    .from(orders)
-    .where(and(inArray(orders.tableId, codes), isPending()))
   const stats: Record<string, TableOrderStats> = {}
   for (const row of rows) {
     const table = stats[row.tableId!] ??= { open: 0, unpaidCompleted: 0, unpaidTotal: 0 }
@@ -51,7 +63,7 @@ async function getTableStats(codes: string[]): Promise<Record<string, TableOrder
     if (row.paymentStatus === 'pending') {
       if (row.status) table.unpaidCompleted++
       // Se suma en céntimos para no acumular errores de redondeo
-      table.unpaidTotal = (Math.round(table.unpaidTotal * 100) + Math.round(row.total * 100)) / 100
+      table.unpaidTotal = fromCents(toCents(table.unpaidTotal) + remainingCents(row))
     }
   }
   return stats
@@ -64,6 +76,8 @@ function getTableOrders(code: string) {
       orderBy: [asc(orders.date)],
       with: {
         orderProducts: {
+          // Las líneas nuevas de los pagos de una parte van detrás de la original
+          orderBy: [asc(orderProducts.id)],
           with: {
             product: true
           }
@@ -82,8 +96,9 @@ function getTableOrders(code: string) {
 
 type SalaPageProps = {
   params: { id: string }
-  // cobrar: pedido Pendiente de pago de la mesa que se está cobrando, o "todo" para cobrarlos todos
-  searchParams: { mesa?: string, cobrar?: string }
+  // cobrar: comanda Pendiente de pago que se está cobrando, PAY_ALL, SPLIT o PAY_LINES.
+  // lineas: productos elegidos en Dividir Pago (ids separados por comas)
+  searchParams: { mesa?: string, cobrar?: string, lineas?: string }
 }
 
 export default async function SalaPage({ params, searchParams }: SalaPageProps) {
@@ -101,9 +116,6 @@ export default async function SalaPage({ params, searchParams }: SalaPageProps) 
   const roomUnpaidTotal = busyCodes.reduce((total, code) => total + Math.round(stats[code].unpaidTotal * 100), 0) / 100
   const selectedUnpaidTotal = selectedCode ? stats[selectedCode]?.unpaidTotal ?? 0 : 0
   const unpaidOrders = pendingOrders.filter(order => order.paymentStatus === 'pending')
-  const payingOrders = searchParams.cobrar === PAY_ALL
-    ? unpaidOrders
-    : unpaidOrders.filter(order => String(order.id) === searchParams.cobrar)
 
   const elements = room.elements.map(({ id, tableId, kind, shape, x, y, width, height, rotation, label }) => ({
     id, kind, shape, x, y, width, height, rotation, label,
@@ -111,6 +123,46 @@ export default async function SalaPage({ params, searchParams }: SalaPageProps) 
   }))
   const roomPath = `/admin/salas/${room.id}`
   const tablePath = selectedCode ? `${roomPath}?mesa=${encodeURIComponent(selectedCode)}` : roomPath
+  const splitPath = `${tablePath}&cobrar=${SPLIT}`
+
+  // Productos de ?lineas= que siguen sin pagar en los pedidos Pendientes de pago de la mesa,
+  // con la cantidad elegida (como mucho la que queda; sin cantidad, toda)
+  const unpaidLines = new Map(unpaidOrders.flatMap(order => order.orderProducts.filter(line => !line.paid).map(line => [line.id, line.quantity])))
+  const lines = parseSelection(searchParams.lineas).flatMap(({ id, quantity }) => {
+    const available = unpaidLines.get(id)
+    return available ? [{ id, quantity: Math.min(quantity ?? available, available) }] : []
+  }).filter((line, index, all) => all.findIndex(other => other.id === line.id) === index)
+  const lineIds = lines.map(line => line.id)
+
+  // Pantalla de cobro abierta encima de los Pedidos pendientes, si la hay
+  let payment: OrderSummaryProps['payment']
+  let split: OrderSummaryProps['split']
+  if (unpaidOrders.length > 0) {
+    if (searchParams.cobrar === SPLIT) {
+      split = {
+        orders: unpaidOrders,
+        selected: lines,
+        pending: selectedUnpaidTotal,
+        backHref: tablePath,
+        selectHref: splitPath,
+        payHref: `${tablePath}&cobrar=${PAY_LINES}`
+      }
+    } else if (searchParams.cobrar === PAY_LINES && lines.length > 0) {
+      payment = {
+        orders: unpaidOrders.filter(order => order.orderProducts.some(line => lineIds.includes(line.id))),
+        lines,
+        pending: selectedUnpaidTotal,
+        // Volver atrás recupera la selección; al pagar se sigue dividiendo lo que queda
+        backHref: `${splitPath}&lineas=${formatSelection(lines)}#pedido`,
+        doneHref: splitPath
+      }
+    } else {
+      const orders = searchParams.cobrar === PAY_ALL
+        ? unpaidOrders
+        : unpaidOrders.filter(order => String(order.id) === searchParams.cobrar)
+      if (orders.length > 0) payment = { orders, backHref: tablePath }
+    }
+  }
 
   return (
     <>
@@ -141,25 +193,35 @@ export default async function SalaPage({ params, searchParams }: SalaPageProps) 
                 <h2 className="text-2xl font-bold">Mesa {selectedCode}</h2>
                 <Link href={roomPath} scroll={false} className="text-sm underline">Cerrar</Link>
               </div>
-              <div className={`flex items-center gap-2 rounded p-3 ${selectedUnpaidTotal > 0 ? 'bg-red-50 text-red-800' : 'bg-gray-100'}`}>
-                <dl className="flex flex-1 items-center justify-between gap-2">
+              <div className={`flex flex-wrap items-center gap-2 rounded p-3 ${selectedUnpaidTotal > 0 ? 'bg-red-50 text-red-800' : 'bg-gray-100'}`}>
+                <dl className="flex flex-1 min-w-48 items-center justify-between gap-2">
                   <dt className="font-bold">Pendiente de pago</dt>
                   <dd className="text-xl font-bold">{formatCurrency(selectedUnpaidTotal)}</dd>
                 </dl>
-                {unpaidOrders.length > 0 && payingOrders.length === 0 && (
-                  // Cobra todo lo de la mesa con la misma pantalla que el Marcar como Pagado de cada comanda
-                  <Link
-                    href={`${tablePath}&cobrar=${PAY_ALL}#pedido`}
-                    title="Marcar como pagado todo lo de la mesa"
-                    className="py-2 px-3 rounded bg-green-600 hover:bg-green-700 text-white text-sm font-bold uppercase whitespace-nowrap"
-                  >
-                    Pagar todo
-                  </Link>
+                {unpaidOrders.length > 0 && !payment && !split && (
+                  // Cobran con la misma pantalla que el Marcar como Pagado de cada comanda
+                  <div className="flex gap-2">
+                    <Link
+                      href={`${tablePath}&cobrar=${PAY_ALL}#pedido`}
+                      title="Marcar como pagado todo lo de la mesa"
+                      className="py-2 px-3 rounded bg-green-600 hover:bg-green-700 text-white text-sm font-bold uppercase whitespace-nowrap"
+                    >
+                      Pagar todo
+                    </Link>
+                    <Link
+                      href={`${splitPath}#pedido`}
+                      title="Elegir los productos sin pagar que se pagan juntos"
+                      className="py-2 px-3 rounded border-2 border-green-600 bg-white hover:bg-green-50 text-green-800 text-sm font-bold uppercase whitespace-nowrap"
+                    >
+                      Dividir Pago
+                    </Link>
+                  </div>
                 )}
               </div>
-              {payingOrders.length > 0 ? (
-                // Cobro encima de los Pedidos pendientes; Volver atrás (o el del navegador) regresa a ellos
-                <OrderSummary payment={{ orders: payingOrders, backHref: tablePath }} />
+              {payment || split ? (
+                // Cobro encima de los Pedidos pendientes; Volver atrás (o el del navegador) regresa a ellos.
+                // key: cada pantalla empieza con su propia selección e Importe entregado
+                <OrderSummary key={`${searchParams.cobrar}|${searchParams.lineas ?? ''}`} payment={payment} split={split} />
               ) : (
                 <>
                 <Link

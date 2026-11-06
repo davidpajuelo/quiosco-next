@@ -1,7 +1,7 @@
 "use server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { db } from "@/src/db"
 import { categories, orderProducts, products } from "@/src/db/schema"
 import { deleteProductImage, saveProductImage } from "@/src/lib/product-images"
@@ -118,7 +118,8 @@ export async function deleteProduct(id: number): Promise<DeleteProductResponse> 
     try {
         await db.transaction(async (tx) => {
             await tx.update(orderProducts)
-                .set({ productId: null, name: product.name, price: product.price })
+                // Las que ya guardan su precio (las de pedidos nuevos) lo conservan
+                .set({ productId: null, name: product.name, price: sql`coalesce(${orderProducts.price}, ${product.price})` })
                 .where(eq(orderProducts.productId, product.id))
             await tx.delete(products).where(eq(products.id, product.id))
         })

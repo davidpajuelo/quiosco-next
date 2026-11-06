@@ -30,9 +30,13 @@ export const orderProducts = pgTable("order_products", {
     // Sin producto en las líneas manuales del quiosco de admin y en las de productos borrados,
     // que guardan su nombre y precio
     productId: integer().references(() => products.id, { onDelete: "restrict" }),
+    // Precio de la línea al hacer el pedido. Las líneas antiguas de productos de la carta no lo
+    // tienen y usan el del producto
     name: text(),
     price: doublePrecision(),
-    quantity: integer().notNull()
+    quantity: integer().notNull(),
+    // Producto Pagado: cobrado en el local con Dividir Pago, o al pagarse el pedido entero
+    paid: boolean().notNull().default(false)
 }, (t) => [
     index().on(t.orderId),
     index().on(t.productId)

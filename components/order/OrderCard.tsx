@@ -4,6 +4,7 @@ import { toast } from "react-toastify"
 import { completeOrder, uncompleteOrder } from "@/actions/complete-order.actions"
 import type { OrderWithProducts, PaymentStatus } from "@/src/types"
 import { formatCurrency } from "@/src/utils"
+import { fromCents, remainingCents, toCents } from "@/src/utils/payments"
 
 const paymentStatusLabels: Record<PaymentStatus, { label: string, className: string }> = {
     pending: { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-800' },
@@ -19,6 +20,9 @@ type orderCardProps = {
     payHref?: string
 }
 export default function OrderCard({ order, payHref }: orderCardProps) {
+    // Pagado en parte con Dividir Pago: se muestra lo que queda
+    const hasPaidLines = order.paymentStatus === 'pending' && order.orderProducts.some(line => line.paid)
+    const remaining = fromCents(remainingCents(order))
 
     const handleCompleteOrder = async (formData: FormData) => {
         const response = await completeOrder(formData)
@@ -73,6 +77,11 @@ export default function OrderCard({ order, payHref }: orderCardProps) {
                             <span>({product.quantity}) {''}</span>
                         </dt>
                         <dd className="text-sm font-medium text-gray-900" > { product.product?.name ?? product.name}</dd>
+                        {product.paid && (
+                            <dd className="ml-auto px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800 whitespace-nowrap">
+                                Producto Pagado
+                            </dd>
+                        )}
                         </div>
                 ))}
             </div>
@@ -82,6 +91,18 @@ export default function OrderCard({ order, payHref }: orderCardProps) {
                     <dt className="text-base font-medium text-gray-900">Total a Pagar: {formatCurrency(order.total)}</dt>
                     <dd className="text-base font-medium text-gray-900">{ }</dd>
                 </div>
+                {hasPaidLines && (
+                    <>
+                        <div className="flex items-center justify-between">
+                            <dt className="text-base text-gray-700">Pagado</dt>
+                            <dd className="text-base text-gray-700">{formatCurrency(fromCents(toCents(order.total) - toCents(remaining)))}</dd>
+                        </div>
+                        <div className="flex items-center justify-between font-bold text-red-700">
+                            <dt>Pendiente de pago</dt>
+                            <dd>{formatCurrency(remaining)}</dd>
+                        </div>
+                    </>
+                )}
             </dl>
 
             {order.status ? (

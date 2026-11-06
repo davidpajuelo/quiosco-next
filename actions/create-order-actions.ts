@@ -151,7 +151,7 @@ async function saveStaffOrder(tableId: string, order: ValidOrder, paid: boolean)
                 ...(paid && { paymentStatus: 'paid' as const, paidAt: new Date() })
             }).returning({ id: orders.id })
             await tx.insert(orderProducts).values(
-                order.orderProducts.map(line => ({ ...line, orderId: created.id }))
+                order.orderProducts.map(line => ({ ...line, orderId: created.id, paid }))
             )
             return created.id
         })
@@ -207,6 +207,8 @@ async function validateOrder(data: z.infer<typeof OrderSchema>, allowManual: boo
         })
         lines.push({
             productId: product.id,
+            // Se guarda el precio del pedido: si cambia en la carta, lo pedido no cambia
+            price: product.price,
             quantity: item.quantity
         })
     }
