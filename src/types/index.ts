@@ -31,3 +31,13 @@ export type Room = typeof rooms.$inferSelect
 export type RoomElement = typeof roomElements.$inferSelect
 export type RoomElementKind = (typeof roomElementKind.enumValues)[number]
 export type RoomElementShape = (typeof roomElementShape.enumValues)[number]
+
+// Resumen de los pedidos de una mesa en la vista de Salas
+export type TableOrderStats = {
+    // Pedidos sin completar (los mismos que salen en Ordenes)
+    open: number
+    // Pedidos completados que siguen Pendientes de pago
+    unpaidCompleted: number
+    // Importe de todos sus pedidos Pendientes de pago, completados o no
+    unpaidTotal: number
+}

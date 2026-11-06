@@ -6,9 +6,11 @@ import { useStore } from "@/src/store"
 
 type ProductDetailsProps = {
     item: OrderItem
+    // Pedido ya hecho (cobro en Salas): sin botones para cambiar cantidades
+    readOnly?: boolean
 }
 
-export default function ProductDetails({ item }: ProductDetailsProps) {
+export default function ProductDetails({ item, readOnly = false }: ProductDetailsProps) {
     const increaseQuantity = useStore((state)=> state.increaseQuantity)
     const decreaseQuantity = useStore((state)=> state.decreaseQuantity)
     const removeItem = useStore((state)=> state.removeItem)
@@ -18,16 +20,21 @@ export default function ProductDetails({ item }: ProductDetailsProps) {
                 <div className="flex justify-between items-start">
                     <p className="text-xl font-bold">{item.name} </p>
 
-                    <button
-                        type="button"
-                        onClick={() => removeItem(item.id)}
-                    >
-                        <XCircleIcon className="text-red-600 h-8 w-8" />
-                    </button>
+                    {!readOnly && (
+                        <button
+                            type="button"
+                            onClick={() => removeItem(item.id)}
+                        >
+                            <XCircleIcon className="text-red-600 h-8 w-8" />
+                        </button>
+                    )}
                 </div>
                 <p className="text-2xl text-[#C65D3B]">
                     {formatCurrency(item.price)}
                 </p>
+                {readOnly ? (
+                    <p className="text-lg">Cantidad: {item.quantity}</p>
+                ) : (
                 <div className="flex gap-5 px-10 py-2 bg-gray-100 w-fit rounded-lg">
                     <button
                         type="button"
@@ -47,6 +54,7 @@ export default function ProductDetails({ item }: ProductDetailsProps) {
                         <PlusIcon className="h-6 w-6" />
                     </button>
                 </div>
+                )}
                 <p className="text-xl text-gray-700">
                     Subtotal: {''}
                     <span className="font-normal">

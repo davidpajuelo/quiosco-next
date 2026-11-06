@@ -64,7 +64,7 @@ export default async function TableKioskLayout({ children, params }: TableKioskL
           {children}
         </div>
         <div className="md:sticky md:top-0 md:self-start">
-          <OrderSummary submitOrder={createTableOrder.bind(null, code)} alwaysVisible admin />
+          <OrderSummary submitOrder={createTableOrder.bind(null, code)} alwaysVisible admin amountGiven={false} />
         </div>
         <CartButton alwaysVisible />
       </div>

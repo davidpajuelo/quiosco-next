@@ -16,17 +16,31 @@ export const OrderSchema = z.object({
     }))
 })
 
-// Pedido desde el quiosco de admin: el nombre es opcional y hay que indicar lo que entrega el cliente,
-// que siempre es mayor o igual que el Total a pagar
-export const AdminOrderSchema = OrderSchema.extend({
-    name: z.string().trim(),
-    amountGiven: z.number({
-        error: (issue) => issue.input === undefined ? 'El Importe entregado es Obligatorio' : 'El Importe entregado no es válido'
-    })
-}).refine(data => isAmountEnough(data.amountGiven, data.total), {
-    message: 'El Importe entregado es menor que el Total a pagar',
-    path: ['amountGiven']
+// Pedido tomado por el admin en una mesa de una sala: el nombre es opcional y se cobra después,
+// así que no lleva Importe entregado (queda Pendiente de pago)
+export const TableOrderSchema = OrderSchema.extend({
+    name: z.string().trim()
 })
+
+// Lo que entrega el cliente al pagar en el local
+export const AmountGivenSchema = z.number({
+    error: (issue) => issue.input === undefined ? 'El Importe entregado es Obligatorio' : 'El Importe entregado no es válido'
+})
+
+// Lo entregado siempre es mayor o igual que el Total a pagar
+const coversTotal = (data: { total: number, amountGiven: number }) => isAmountEnough(data.amountGiven, data.total)
+const coversTotalError = { message: 'El Importe entregado es menor que el Total a pagar', path: ['amountGiven'] }
+
+// Pedido desde el quiosco de admin: se cobra al momento y hay que indicar lo que entrega el cliente
+export const AdminOrderSchema = TableOrderSchema.extend({
+    amountGiven: AmountGivenSchema
+}).refine(coversTotal, coversTotalError)
+
+// Cobro en el local de un pedido ya hecho y Pendiente de pago (mesas de las salas)
+export const OrderPaymentSchema = z.object({
+    total: z.number(),
+    amountGiven: AmountGivenSchema
+}).refine(coversTotal, coversTotalError)
 
 // Compara en céntimos para evitar errores de redondeo con decimales
 export function isAmountEnough(amountGiven: number, total: number) {
@@ -84,6 +98,11 @@ export const OrderIdSchema = z.object({
                     .transform((value) => parseInt(value))
                     .refine(value => value > 0, { message: 'Hay errores' })
 })
+
+// Pedidos que se cobran juntos: uno (su comanda) o todos los Pendientes de pago de una mesa
+export const OrderIdsSchema = z.array(z.number().int().positive(), { error: 'Hay errores' })
+    .min(1, 'No hay pedidos que cobrar')
+    .max(200, 'Hay demasiados pedidos')
 
 export const RoomIdSchema = z.coerce.number().int().positive()
 

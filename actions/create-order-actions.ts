@@ -7,7 +7,7 @@ import { eq, inArray } from "drizzle-orm"
 import { db } from "@/src/db"
 import { orderProducts, orders, products, tables } from "@/src/db/schema"
 import { CheckoutItem, createCheckoutSession, getStripe } from "@/src/lib/stripe"
-import { AdminOrderSchema, ManualProductSchema, OrderSchema, isAmountEnough } from "@/src/schema"
+import { AdminOrderSchema, ManualProductSchema, OrderSchema, TableOrderSchema, isAmountEnough } from "@/src/schema"
 import type { NewOrderLine } from "@/src/types"
 import { z } from "zod"
 
@@ -94,27 +94,8 @@ export async function createOrder(data: unknown): Promise<CreateOrderResponse> {
 }
 
 // Pedidos hechos desde la vista del quiosco en el panel de administración (Mesa 0).
-// No pasan por la pasarela: se cobran en el local y se guardan como pagados.
+// No pasan por la pasarela: se cobran en el local al momento y se guardan como pagados.
 export async function createAdminOrder(data: unknown): Promise<CreateOrderResponse> {
-    return saveAdminOrder(ADMIN_TABLE_ID, data)
-}
-
-// Pedido tomado por el admin para una mesa del plano de una sala; se cobra igual que en el quiosco
-export async function createTableOrder(tableId: string, data: unknown): Promise<CreateOrderResponse> {
-    const table = typeof tableId === 'string'
-        ? await db.query.tables.findFirst({ where: eq(tables.id, tableId) })
-        : null
-    if (!table) {
-        return {
-            errors: [{ message: 'La mesa no existe' }]
-        }
-    }
-    const response = await saveAdminOrder(table.id, data)
-    if ('orderId' in response) revalidatePath('/admin/salas', 'layout')
-    return response
-}
-
-async function saveAdminOrder(tableId: string, data: unknown): Promise<CreateOrderResponse> {
     const result = AdminOrderSchema.safeParse(data)
     if (!result.success){
         return {
@@ -130,7 +111,35 @@ async function saveAdminOrder(tableId: string, data: unknown): Promise<CreateOrd
             errors: [{ message: 'El Importe entregado es menor que el Total a pagar' }]
         }
     }
+    return saveStaffOrder(ADMIN_TABLE_ID, order, true)
+}
 
+// Pedido tomado por el admin para una mesa del plano de una sala. Se cobra más tarde:
+// no lleva Importe entregado y queda Pendiente de pago hasta que se marque como Pagado
+export async function createTableOrder(tableId: string, data: unknown): Promise<CreateOrderResponse> {
+    const table = typeof tableId === 'string'
+        ? await db.query.tables.findFirst({ where: eq(tables.id, tableId) })
+        : null
+    if (!table) {
+        return {
+            errors: [{ message: 'La mesa no existe' }]
+        }
+    }
+    const result = TableOrderSchema.safeParse(data)
+    if (!result.success){
+        return {
+            errors: result.error.issues
+        }
+    }
+    const order = await validateOrder(result.data, true)
+    if ('errors' in order) return order
+
+    const response = await saveStaffOrder(table.id, order, false)
+    if ('orderId' in response) revalidatePath('/admin/salas', 'layout')
+    return response
+}
+
+async function saveStaffOrder(tableId: string, order: ValidOrder, paid: boolean): Promise<CreateOrderResponse> {
     try{
         const id = await db.transaction(async (tx) => {
             if (tableId === ADMIN_TABLE_ID) await tx.insert(tables).values({ id: ADMIN_TABLE_ID }).onConflictDoNothing()
@@ -138,8 +147,8 @@ async function saveAdminOrder(tableId: string, data: unknown): Promise<CreateOrd
                 name: order.name,
                 total: order.total,
                 tableId,
-                paymentStatus: 'paid',
-                paidAt: new Date()
+                // Sin pagar se queda con el valor por defecto: pending
+                ...(paid && { paymentStatus: 'paid' as const, paidAt: new Date() })
             }).returning({ id: orders.id })
             await tx.insert(orderProducts).values(
                 order.orderProducts.map(line => ({ ...line, orderId: created.id }))

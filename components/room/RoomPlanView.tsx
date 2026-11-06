@@ -2,7 +2,7 @@
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import type { RoomLayoutElement } from '@/src/schema'
-import type { RoomPoint } from '@/src/types'
+import type { RoomPoint, TableOrderStats } from '@/src/types'
 import { fitView, isTableKind } from './designer/layout'
 import { PlanDefs, PlanLabel, PlanOutline, PlanShape, sortByLayer } from './plan'
 
@@ -10,16 +10,18 @@ import { PlanDefs, PlanLabel, PlanOutline, PlanShape, sortByLayer } from './plan
 const REFRESH_MS = 30_000
 
 const BUSY_FILL = '#C65D3B'
+// Aviso de pedidos completados pero sin pagar, en la esquina izquierda
+const UNPAID_FILL = '#dc2626'
 
 type RoomPlanViewProps = {
     outline: RoomPoint[]
     elements: (RoomLayoutElement & { id: number })[]
-    // Pedidos pendientes por código de mesa
-    pending: Record<string, number>
+    // Resumen de pedidos por código de mesa
+    stats: Record<string, TableOrderStats>
     selectedCode: string | null
 }
 
-export default function RoomPlanView({ outline, elements, pending, selectedCode }: RoomPlanViewProps) {
+export default function RoomPlanView({ outline, elements, stats, selectedCode }: RoomPlanViewProps) {
     const router = useRouter()
     const pathname = usePathname()
     const svgRef = useRef<SVGSVGElement>(null)
@@ -77,16 +79,23 @@ export default function RoomPlanView({ outline, elements, pending, selectedCode 
                     )
                 }
 
-                const count = pending[code] ?? 0
+                const count = stats[code]?.open ?? 0
+                const unpaid = stats[code]?.unpaidCompleted ?? 0
                 const isSelected = code === selectedCode
-                const badge = { x: element.x + element.width / 2, y: element.y - element.height / 2, r: 9 * k }
+                const top = element.y - element.height / 2
+                const badge = { x: element.x + element.width / 2, y: top, r: 9 * k }
+                const unpaidBadge = { x: element.x - element.width / 2, y: top, r: 9 * k }
+                const description = [
+                    count === 0 ? 'sin pedidos pendientes' : count === 1 ? '1 pedido pendiente' : `${count} pedidos pendientes`,
+                    ...(unpaid ? [unpaid === 1 ? '1 pedido completado sin pagar' : `${unpaid} pedidos completados sin pagar`] : [])
+                ].join(', ')
                 return (
                     <g
                         key={element.id}
                         role="button"
                         tabIndex={0}
                         aria-pressed={isSelected}
-                        aria-label={`Mesa ${code}: ${count === 0 ? 'sin pedidos pendientes' : count === 1 ? '1 pedido pendiente' : `${count} pedidos pendientes`}`}
+                        aria-label={`Mesa ${code}: ${description}`}
                         onClick={() => select(code)}
                         onKeyDown={e => handleKeyDown(e, code)}
                         className="cursor-pointer outline-none focus-visible:opacity-80"
@@ -98,25 +107,33 @@ export default function RoomPlanView({ outline, elements, pending, selectedCode 
                             strokeWidth={(isSelected ? 3 : 1) * k}
                         />
                         <PlanLabel element={element} text={code} k={k} fill={count ? '#ffffff' : undefined} />
-                        {count > 0 && (
-                            <g pointerEvents="none">
-                                <circle cx={badge.x} cy={badge.y} r={badge.r} fill="#1f2937" stroke="#ffffff" strokeWidth={1.5 * k} />
-                                <text
-                                    x={badge.x}
-                                    y={badge.y}
-                                    fontSize={11 * k}
-                                    textAnchor="middle"
-                                    dominantBaseline="central"
-                                    fontWeight="bold"
-                                    fill="#ffffff"
-                                >
-                                    {count}
-                                </text>
-                            </g>
-                        )}
+                        {count > 0 && <PlanBadge {...badge} k={k} fill="#1f2937" value={count} />}
+                        {unpaid > 0 && <PlanBadge {...unpaidBadge} k={k} fill={UNPAID_FILL} value={unpaid} />}
                     </g>
                 )
             })}
         </svg>
+    )
+}
+
+type PlanBadgeProps = { x: number, y: number, r: number, k: number, fill: string, value: number }
+
+// Contador en una esquina de la mesa
+function PlanBadge({ x, y, r, k, fill, value }: PlanBadgeProps) {
+    return (
+        <g pointerEvents="none">
+            <circle cx={x} cy={y} r={r} fill={fill} stroke="#ffffff" strokeWidth={1.5 * k} />
+            <text
+                x={x}
+                y={y}
+                fontSize={11 * k}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontWeight="bold"
+                fill="#ffffff"
+            >
+                {value}
+            </text>
+        </g>
     )
 }

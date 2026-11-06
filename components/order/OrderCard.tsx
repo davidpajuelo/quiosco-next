@@ -1,4 +1,5 @@
 "use client"
+import Link from "next/link"
 import { toast } from "react-toastify"
 import { completeOrder, uncompleteOrder } from "@/actions/complete-order.actions"
 import type { OrderWithProducts, PaymentStatus } from "@/src/types"
@@ -14,8 +15,10 @@ const paymentStatusLabels: Record<PaymentStatus, { label: string, className: str
 
 type orderCardProps = {
     order: OrderWithProducts
+    // Pantalla de cobro de los pedidos Pendientes de pago (vista de Salas)
+    payHref?: string
 }
-export default function OrderCard({ order }: orderCardProps) {
+export default function OrderCard({ order, payHref }: orderCardProps) {
 
     const handleCompleteOrder = async (formData: FormData) => {
         const response = await completeOrder(formData)
@@ -81,16 +84,29 @@ export default function OrderCard({ order }: orderCardProps) {
                 </div>
             </dl>
 
-            <form action={handleCompleteOrder}>
-                <input type="hidden" 
-                value={order.id}
-                name="order_id"/>
-                <input
-                    type="submit"
-                    className="bg-primary hover:bg-primary-dark text-black w-full mt-5 p-3 uppercase font-bold cursor-pointer"
-                    value='Marcar Orden Completada'
-                />
-            </form>
+            {order.status ? (
+                <p className="text-lg font-medium text-gray-900">Estado: <span className="font-bold">Completada</span></p>
+            ) : (
+                <form action={handleCompleteOrder}>
+                    <input type="hidden" 
+                    value={order.id}
+                    name="order_id"/>
+                    <input
+                        type="submit"
+                        className="bg-primary hover:bg-primary-dark text-black w-full mt-5 p-3 uppercase font-bold cursor-pointer"
+                        value='Marcar Orden Completada'
+                    />
+                </form>
+            )}
+
+            {payHref && order.paymentStatus === 'pending' && (
+                <Link
+                    href={payHref}
+                    className="block bg-green-600 hover:bg-green-700 text-white w-full p-3 uppercase font-bold text-center"
+                >
+                    Marcar como Pagado
+                </Link>
+            )}
         </section>
     )
 }
