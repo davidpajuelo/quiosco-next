@@ -10,6 +10,7 @@ import OrderSummary from "@/components/order/OrderSummary"
 import CartButton from "@/components/ui/CartButton"
 import ManualProductLink from "@/components/admin/ManualProductLink"
 import TableOrderScope from "@/components/room/TableOrderScope"
+import { HeaderPortal } from "@/components/ui/HeaderSlot"
 import { createTableOrder } from "@/actions/create-order-actions"
 
 // La mesa tiene que estar en el plano de esa sala
@@ -41,19 +42,21 @@ export default async function TableKioskLayout({ children, params }: TableKioskL
       <TableOrderScope code={code} />
       {/* Mismo esquema que /admin/quiosco: -m-5 anula el padding del <main> del admin y,
           en escritorio, el quiosco llena el hueco bajo la barra del admin con su propio scroll */}
+      {/* En la cabecera del admin, a los lados del logo (cada lado no pasa de la mitad menos el logo) */}
+      <HeaderPortal>
+        <p className="max-w-[calc(50%-3.5rem)] text-sm leading-tight md:text-xl">
+          Nuevo pedido para la <strong>Mesa {code}</strong> · {table.room}
+        </p>
+        <Link
+          href={`/admin/salas/${params.id}?mesa=${code}`}
+          className="max-w-[calc(50%-3.5rem)] py-1 px-2 md:py-2 md:px-6 rounded border-2 border-black font-bold uppercase text-sm md:text-base text-center leading-tight"
+        >
+          ← Volver a la sala
+        </Link>
+      </HeaderPortal>
       <div className="-m-5 md:flex md:flex-col md:h-[calc(100%+2.5rem)]">
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-white px-5 py-3 shadow">
-          <p className="text-xl">
-            Nuevo pedido para la <strong>Mesa {code}</strong> · {table.room}
-          </p>
-          <Link
-            href={`/admin/salas/${params.id}?mesa=${code}`}
-            className="py-2 px-6 rounded border-2 border-black font-bold uppercase"
-          >
-            ← Volver a la sala
-          </Link>
-        </div>
-        <CategoryNav>
+        {/* Como en /admin/quiosco: se oculta al elegir una categoría y la pestaña "Salas" la vuelve a mostrar */}
+        <CategoryNav collapsibleAt={basePath}>
           <ManualProductLink href={`${basePath}/manual-product`} />
           {categories.map(category => (
             <CategoryTab

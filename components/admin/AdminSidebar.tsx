@@ -6,8 +6,8 @@ const iconClass = 'size-6 shrink-0'
 
 const adminNavigation = [
     {url: '/admin/orders', text: 'Ordenes', blank: false, icon: <ClipboardDocumentListIcon className={iconClass} aria-hidden="true"/>},
-    {url: '/admin/quiosco', text: 'Ver Quiosco', blank: false, icon: <BuildingStorefrontIcon className={iconClass} aria-hidden="true"/>},
-    {url: '/admin/salas', text: 'Salas', blank: false, icon: <Squares2X2Icon className={iconClass} aria-hidden="true"/>},
+    {url: '/admin/quiosco', text: 'Ver Quiosco', blank: false, kiosk: true, icon: <BuildingStorefrontIcon className={iconClass} aria-hidden="true"/>},
+    {url: '/admin/salas', text: 'Salas', blank: false, tableOrder: true, icon: <Squares2X2Icon className={iconClass} aria-hidden="true"/>},
     {url: '/admin/products', text: 'Productos', blank: false, icon: <CubeIcon className={iconClass} aria-hidden="true"/>},
     {url: '/admin/rooms', text: 'Crear/Editar Salas', blank: false, icon: <WrenchScrewdriverIcon className={iconClass} aria-hidden="true"/>},
 ]

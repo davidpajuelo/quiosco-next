@@ -5,6 +5,7 @@ import OrderSummary from "@/components/order/OrderSummary"
 import CartButton from "@/components/ui/CartButton"
 import ManualProductLink from "@/components/admin/ManualProductLink"
 import { createAdminOrder } from "@/actions/create-order-actions"
+import { KIOSK_PATH } from "@/src/kiosk-nav-store"
 
 async function getCategories(){
   return await db.query.categories.findMany()
@@ -18,7 +19,8 @@ export default async function AdminKioskLayout({ children }: Readonly<{ children
   const categories = await getCategories()
   return (
     <div className="-m-5 md:flex md:flex-col md:h-[calc(100%+2.5rem)]">
-      <CategoryNav>
+      {/* Al elegir una categoría se oculta; "Ver Quiosco" la vuelve a mostrar sin perder la categoría */}
+      <CategoryNav collapsibleAt={KIOSK_PATH}>
         <ManualProductLink />
         {categories.map(category => (
           <CategoryTab

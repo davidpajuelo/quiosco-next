@@ -1,11 +1,14 @@
-import { redirect } from "next/navigation"
 import { db } from "@/src/db"
 import Heading from "@/components/ui/Heading"
 
-// Abre directamente la primera categoría, como /admin/quiosco
-export default async function TableKioskPage({ params }: { params: { id: string, code: string } }) {
+// Al elegir la mesa, como en /admin/quiosco: se ve la barra de categorías para elegir una.
+// Al elegirla, la barra se oculta; la pestaña "Salas" la vuelve a mostrar
+export default async function TableKioskPage() {
   const category = await db.query.categories.findFirst()
-  if (category) redirect(`/admin/salas/${params.id}/pedido/${params.code}/${category.slug}`)
 
-  return <Heading>No hay categorías en el quiosco</Heading>
+  return (
+    <Heading>
+      {category ? "Elige una categoría" : "No hay categorías en el quiosco"}
+    </Heading>
+  )
 }

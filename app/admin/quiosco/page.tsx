@@ -1,11 +1,14 @@
-import { redirect } from "next/navigation"
 import { db } from "@/src/db"
 import Heading from "@/components/ui/Heading"
 
-// Abre directamente la primera categoría
+// Pantalla de inicio del quiosco de admin: solo aquí se ve la barra de categorías.
+// Al elegir una, la barra se oculta; "Ver Quiosco" vuelve a esta pantalla
 export default async function AdminKioskPage() {
   const category = await db.query.categories.findFirst()
-  if (category) redirect(`/admin/quiosco/${category.slug}`)
 
-  return <Heading>No hay categorías en el quiosco</Heading>
+  return (
+    <Heading>
+      {category ? "Elige una categoría" : "No hay categorías en el quiosco"}
+    </Heading>
+  )
 }
