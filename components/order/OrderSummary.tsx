@@ -200,7 +200,7 @@ export default function OrderSummary({ submitOrder = createOrder, alwaysVisible 
   if (!visible) return null
 
   return (
-    <aside id='pedido' className={payment || split ? 'scroll-mt-2' : 'md:h-screen md:overflow-y-scroll md:w-64 lg:w-96 p-5 scroll-mt-2 '}>
+    <aside id='pedido' className={payment || split ? 'scroll-mt-2' : 'md:h-full md:max-h-screen md:overflow-y-scroll md:w-64 lg:w-96 p-5 scroll-mt-28'}>
       {payment || split ? (
         <Link
           href={(payment ?? split)!.backHref}

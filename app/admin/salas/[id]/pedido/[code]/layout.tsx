@@ -4,7 +4,8 @@ import { and, eq } from "drizzle-orm"
 import { db } from "@/src/db"
 import { roomElements, rooms } from "@/src/db/schema"
 import { RoomIdSchema } from "@/src/schema"
-import CategoryIcon from "@/components/ui/CategoryIcon"
+import CategoryNav from "@/components/order/CategoryNav"
+import CategoryTab from "@/components/order/CategoryTab"
 import OrderSummary from "@/components/order/OrderSummary"
 import CartButton from "@/components/ui/CartButton"
 import ManualProductLink from "@/components/admin/ManualProductLink"
@@ -38,32 +39,34 @@ export default async function TableKioskLayout({ children, params }: TableKioskL
   return (
     <>
       <TableOrderScope code={code} />
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded bg-white p-4 shadow">
-        <p className="text-xl">
-          Nuevo pedido para la <strong>Mesa {code}</strong> · {table.room}
-        </p>
-        <Link
-          href={`/admin/salas/${params.id}?mesa=${code}`}
-          className="py-2 px-6 rounded border-2 border-black font-bold uppercase"
-        >
-          ← Volver a la sala
-        </Link>
-      </div>
-      <div className="md:flex gap-5">
-        <nav className="md:w-64 md:sticky md:top-0 md:self-start mb-5 md:mb-0">
+      {/* Mismo esquema que /admin/quiosco: -m-5 anula el padding del <main> del admin y,
+          en escritorio, el quiosco llena el hueco bajo la barra del admin con su propio scroll */}
+      <div className="-m-5 md:flex md:flex-col md:h-[calc(100%+2.5rem)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white px-5 py-3 shadow">
+          <p className="text-xl">
+            Nuevo pedido para la <strong>Mesa {code}</strong> · {table.room}
+          </p>
+          <Link
+            href={`/admin/salas/${params.id}?mesa=${code}`}
+            className="py-2 px-6 rounded border-2 border-black font-bold uppercase"
+          >
+            ← Volver a la sala
+          </Link>
+        </div>
+        <CategoryNav>
+          <ManualProductLink href={`${basePath}/manual-product`} />
           {categories.map(category => (
-            <CategoryIcon
+            <CategoryTab
               key={category.id}
               category={category}
               basePath={basePath}
             />
           ))}
-          <ManualProductLink href={`${basePath}/manual-product`} />
-        </nav>
-        <div className="md:flex-1">
-          {children}
-        </div>
-        <div className="md:sticky md:top-0 md:self-start">
+        </CategoryNav>
+        <div className="md:flex md:flex-1 md:min-h-0">
+          <div className="md:flex-1 md:overflow-y-auto p-5">
+            {children}
+          </div>
           <OrderSummary submitOrder={createTableOrder.bind(null, code)} alwaysVisible admin amountGiven={false} />
         </div>
         <CartButton alwaysVisible />

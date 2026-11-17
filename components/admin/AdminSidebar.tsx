@@ -1,32 +1,28 @@
 import AdminRoute from "./AdminRoute"
-import Logo from "@/components/ui/Logo";
+import ScrollTabs from "@/components/ui/ScrollTabs";
+import { BuildingStorefrontIcon, ClipboardDocumentListIcon, CubeIcon, Squares2X2Icon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
+
+const iconClass = 'size-6 shrink-0'
 
 const adminNavigation = [
-    {url: '/admin/orders', text: 'Ordenes', blank: false},
-    {url: '/admin/products', text: 'Productos', blank: false},
-    {url: '/admin/salas', text: 'Salas', blank: false},
-    {url: '/admin/rooms', text: 'Crear/Editar Salas', blank: false},
-    {url: '/admin/quiosco', text: 'Ver Quiosco', blank: false},
+    {url: '/admin/orders', text: 'Ordenes', blank: false, icon: <ClipboardDocumentListIcon className={iconClass} aria-hidden="true"/>},
+    {url: '/admin/quiosco', text: 'Ver Quiosco', blank: false, icon: <BuildingStorefrontIcon className={iconClass} aria-hidden="true"/>},
+    {url: '/admin/salas', text: 'Salas', blank: false, icon: <Squares2X2Icon className={iconClass} aria-hidden="true"/>},
+    {url: '/admin/products', text: 'Productos', blank: false, icon: <CubeIcon className={iconClass} aria-hidden="true"/>},
+    {url: '/admin/rooms', text: 'Crear/Editar Salas', blank: false, icon: <WrenchScrewdriverIcon className={iconClass} aria-hidden="true"/>},
 ]
 
+// Barra del admin (debajo del logo): menú desplazable en horizontal
 export default function AdminSidebar() {
-
     return (
-        <>
-
-            <div className="space-y-3 ">
-                <Logo/>
-                <p className="mt-8 uppercase text-2xl text-black text-center">Menú</p>
-                <nav className="flex flex-col">
-                    {adminNavigation.map(link =>(
-                        <AdminRoute
-                            key={link.url}
-                            link = {link}
-                        />
-                    ))}
-                </nav>
-            </div>
-        </>
-
+        <nav aria-label="Menú de administración" className="bg-[var(--color-background-light)] shadow-md">
+            <ScrollTabs>
+                {adminNavigation.map(({icon, ...link}) => (
+                    <AdminRoute key={link.url} link={link}>
+                        {icon}
+                    </AdminRoute>
+                ))}
+            </ScrollTabs>
+        </nav>
     )
 }
