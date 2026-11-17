@@ -12,11 +12,12 @@ async function getCategories(){
 
 // El quiosco dentro del panel de administración; los pedidos van a la Mesa 0.
 // -m-5 anula el padding del <main> del admin para que la barra ocupe todo el ancho
-// y, en escritorio, el quiosco llene la pantalla con su propio scroll
+// y, en escritorio, el quiosco llene el hueco bajo la barra del admin con su propio scroll
+// (100% del <main> + los 2.5rem del padding anulado)
 export default async function AdminKioskLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const categories = await getCategories()
   return (
-    <div className="-m-5 md:flex md:flex-col md:h-screen">
+    <div className="-m-5 md:flex md:flex-col md:h-[calc(100%+2.5rem)]">
       <CategoryNav>
         <ManualProductLink />
         {categories.map(category => (
